@@ -13,76 +13,141 @@
         }
     </style>
 </head>
-
 <body>
     <section class="hero has-background-black">
         <div class="hero-body">
             <div class="container center">
-                <h1 class="title" style="color:white">Lab</h1>
+                <h1 class="title has-text-white">Lab</h1>
             </div>
         </div>
     </section>
     <section class="section has-background-grey-dark">
         <div class="container">
             <!-- IMG_20201020_005823_386_.jpg --- ft232h-examples -->
+            <div class="container center">
+                <figure class="image">
+                    <img src="images/TP_TD.webp" class="img-fluid" alt="Description" style="max-height: 80%;"><br/>
+                    <figcaption class="has-text-white"></figcaption>
+                </figure>
+            </div>
+
             <div class="columns">
-                <div class="column"></div>
+                <div class="column"><!-- reserved --></div>
                 <div class="column is-two-fifths">
                     <figure class="image">
-                        <img src="images/IMG_20210827_095923117.jpg" class="img-fluid" alt="Description"><br>
+                        <img src="images/IMG_20210827_095923117.webp" class="img-fluid" alt="Description"><br/>
                         <figcaption></figcaption>
                       </figure>
                 </div>
                 <div class="column"></div>
                 <div class="column is-two-fifths">
                     <figure class="image">
-                        <img src="images/IMG_20210827_100108821.jpg" class="img-fluid" alt="Description"><br>
+                        <img src="images/IMG_20210827_100108821.webp" class="img-fluid" alt="Description"><br/>
                         <figcaption></figcaption>
                     </figure>
                 </div>
                 <div class="column"></div>
             </div>
+
             <div class="columns">
                 <div class="column"></div>
                 <div class="column is-two-fifths">
                     <figure class="image">
-                        <img src="images/P1260110_.JPG" class="img-fluid" alt="Description"><br>
+                        <img src="images/P1260110.webp" class="img-fluid" alt="Description"><br/>
                         <figcaption></figcaption>
                       </figure>
                 </div>
                 <div class="column"></div>
                 <div class="column is-two-fifths">
                     <figure class="image">
-                        <img src="images/P1260111_.JPG" class="img-fluid" alt="Description"><br>
+                        <img src="images/P1260111.webp" class="img-fluid" alt="Description"><br/>
                         <figcaption></figcaption>
                     </figure>
                 </div>
                 <div class="column"></div>
             </div>
+
             <div class="columns">
                 <div class="column"></div>
                 <div class="column is-half">
                     <figure class="image">
-                        <img src="images/IMG_20210203_140421224_.jpg" class="img-fluid" alt="Description"><br>
-                        <figcaption style="color:white">3D printed fan grill and holder</figcaption>
+                        <img src="images/IMG_20210203_140421224.webp" class="img-fluid" alt="Description"><br/>
+                        <figcaption class="has-text-white">3D printed fan grill and holder</figcaption>
                     </figure>
                 </div>
                 <div class="column"></div>
             </div>
+
             <div class="container center">
                 <video width="640px" controls>
                     <source src="the-swan.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video> 
             </div>
+
+            <div class="block center" style="margin-top: 3rem">
+                <span class="has-text-white">SMD Level shifter in TH-Protoboard</span>&nbsp;
+                <a class="link" href="javascript:toggleImage('shifter')">[toggle]</a>
+            </div>
+            <div class="columns">
+                <div class="column"></div>
+                <div class="column is-half">
+                    <figure id="shifter" class="image" style="display: none;">
+                        <img src="images/IMG_20220611_155521400.webp" class="img-fluid"/>
+                    </figure>
+                </div>  
+                <div class="column"></div> 
+            </div>
+
+            <div class="block center">
+                <span class="has-text-white">Arcade (work in progress)</span>&nbsp;
+                <a class="link" href="javascript:toggleImage('arcade')">[toggle]</a>
+            </div>
+            <div class="columns">
+                <div class="column"></div>
+                <div class="column is-half">
+                    <figure id="arcade" class="image" style="display: none;">
+                        <img src="images/IMG_20210311_135402354.webp" class="img-fluid"/>
+                    </figure>
+                </div>  
+                <div class="column"></div> 
+            </div>
+
+            <div class="block center">
+                <span class="has-text-white">Castellated Holes</span>&nbsp;
+                <a class="link" href="javascript:toggleFlex('castellated')">[toggle]</a>
+            </div>
+            <div id="castellated" class="columns" style="display: none">
+                <div class="column"></div>
+                <div class="column is-two-fifths">
+                    <figure class="image">
+                        <img src="images/Castellated1.webp" class="img-fluid" alt="Description"><br/>
+                        <figcaption></figcaption>
+                      </figure>
+                </div>
+                <div class="column"></div>
+                <div class="column is-two-fifths">
+                    <figure class="image">
+                        <img src="images/Castellated2.webp" class="img-fluid" alt="Description"><br/>
+                        <figcaption></figcaption>
+                    </figure>
+                </div>
+                <div class="column"></div>
+            </div>
         </div>
     </section>
+    <script>
+        function toggleImage(id) {
+            const div = document.getElementById(id);
+            div.style.display = (div.style.display === 'none') ? 'block' : 'none';
+        }
+        function toggleFlex(id) {
+            const div = document.getElementById(id);
+            div.style.display = (div.style.display === 'none') ? 'flex' : 'none';
+        }
+    </script>
 </body>
 <!--
-<figure>
-    <img src="images/IMG_20210311_135402354_.jpg" class="img-fluid" alt="Description"><br>
-    <figcaption>Arcade</figcaption>
-</figure>
 <figure>
     <img src="images/IMG_20201029_053050434.jpg" class="img-fluid" alt="Description"><br>
     <figcaption>GDB</figcaption>
