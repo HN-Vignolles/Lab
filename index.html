@@ -143,7 +143,7 @@
         }
         function toggleFlex(id) {
             const div = document.getElementById(id);
-            div.style.display = (div.style.display === 'none') ? 'flex' : 'none';
+            div.style.display = (div.style.display !== 'none') ? 'none' : '';
         }
     </script>
 </body>
