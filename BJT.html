@@ -48,7 +48,7 @@
             const I_SE = I_S/alphaF; //.1e-15;
             const I_SC = I_S/alphaR; //20e-15;
 
-            d3.xml("./images/Ebers-Moll.svg").then(data => {
+            d3.xml("./assets/Ebers-Moll.svg").then(data => {
                 d3.select('#Ebers-Moll-div').node().append(data.documentElement);
                 const svg = d3.select("#Ebers-Moll-div").select("svg");
                 
