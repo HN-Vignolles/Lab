@@ -101,15 +101,24 @@
                 
                 sliderDiv.select("#slider-Vbe")
                     .on("change", function(d){
-                        vbe = this.value/100;
                         XY = {};
+                        vbe = this.value/100;
+                        updateG();
+                    })
+                    .on("touchmove", function(d){
+                        XY = {};
+                        vbe = this.value/100;
                         updateG();
                     });
                 sliderDiv.select("#slider-Vbc")
                     .on("change", function(d){
                         vbc = this.value/100;
                         updateG();
-                    });
+                    })
+                    .on("touchmove", function(d){
+                        vbc = this.value/100;
+                        updateG();
+                    })
                 
                 function setDiv(htmlSel, svgSel, text="") {
                     let box = svg.select(svgSel);
