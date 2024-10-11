@@ -48,9 +48,9 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="3.8247287"
-     inkscape:cx="271.65325"
-     inkscape:cy="599.38892"
+     inkscape:zoom="2.7044916"
+     inkscape:cx="599.1884"
+     inkscape:cy="178.40691"
      inkscape:window-width="1920"
      inkscape:window-height="1011"
      inkscape:window-x="0"
@@ -638,7 +638,7 @@
     </g>
   </g>
   <rect
-     style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.90497;stroke-opacity:1"
+     style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-opacity:1;stroke-dasharray:none"
      id="rect-sVbe"
      width="169.54707"
      height="29.5471"
@@ -786,4 +786,11 @@
      height="20"
      x="140"
      y="410" />
+  <rect
+     style="fill:none;stroke:#000000;stroke-width:1;stroke-dasharray:none"
+     id="rect-plot-output"
+     width="50"
+     height="20"
+     x="650"
+     y="150" />
 </svg>
