@@ -17,20 +17,26 @@
         .overlay {
             position: absolute;
         }
+        body {
+            background-color: black;
+        }
         [v-cloak] {
             display: none;
         }
     </style>
 </head>
 <body>
-    <section class="hero" id="app" v-cloak>
+    <section class="hero has-background-red" id="app" v-cloak>
         <div class="hero-body has-background-dark">
             <div class="container center">
                 <h1 class="title has-text-white">MOSFET</h1>
             </div>
             <div class="block"></div>
             <div class="block center has-background-grey" style="height: 6em">
-                <p class="has-text-white">
+                <p class="has-text-white is-hidden-tablet is-hidden-desktop is-hidden-widescreen is-hidden-fullhd">
+                    Please rotate your cellphone
+                </p>
+                <p class="has-text-white is-hidden-mobile">
                 \( \text{N-MOS} \begin{cases}
                 v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
                 v_{GS} = V_{tn} + v_{OV} \begin{cases}
@@ -57,10 +63,11 @@
             <div class="columns has-background-white">
                 <div class="column"></div>
                 <div class="column" id="ax1"></div>
+                <div class="column" id="ax2"></div>
                 <div class="column"></div>
             </div>
             <div class="block center has-background-grey" style="height: 6em">
-                <p class="has-text-white">
+                <p class="has-text-white is-hidden-mobile">
                 \( \text{P-MOS} \begin{cases}
                 v_{GS} \gt V_{tp} \;\equiv\; v_{SG} \lt |V_{tp}|, \qquad \text{cutoff} \\
                 v_{SG} = |V_{tp}| + |v_{OV}| \begin{cases}
@@ -92,7 +99,8 @@
             <div class="block"></div>
             <div class="columns has-background-white">
                 <div class="column"></div>
-                <div class="column" id="ax2"></div>
+                <div class="column" id="ax3"></div>
+                <div class="column" id="ax4"></div>
                 <div class="column"></div>
             </div>
         </div>
@@ -114,21 +122,22 @@
                     test: {},
                     n_Id: 0, p_Id: 0,
                     n_sVgs: "",
-                    n_svg: {}, p_svg: {},
-                    n_x: {}, p_x: {},
-                    n_y: {}, p_y: {},
+                    svg: { n:{ ax1:{}, ax2:{} }, p:{ ax3:{}, ax4:{}} },
+                    p_x: {},
+                    p_y: {},
                     n_sweepVds: [], p_sweepVds: [],
+                    sweepVgs: {n:[], p:[] },
                     n_pathIdVds: {}, p_pathIdVds: {}, // D3 trace (plot): Id vs Vds
                     n_pathVov: {}, p_pathVov: {},
                     n_textVov: {}, p_textVov: {},
                     n_circleQ: {}, p_circleQ: {},
                     margin: { top: 30, right: 30, bottom: 30, left: 50 },
-                    width: 500 - margin.left - margin.right,
+                    width: window.innerWidth*0.8 - margin.left - margin.right,
                     height: 350 - margin.top - margin.bottom,
                 }
             },
             methods: {
-                getId(Vds=null, ch='n'){
+                getIdOut(Vds=null, ch='n'){
                     let sweep, filterA, filterB, m=1.0;
                     if(ch==='n'){
                         sweep = this.n_sweepVds;
@@ -156,79 +165,98 @@
                             return 0.5*this.k[ch]*(this.Vov[ch])**2;
                     }
                 },
+                getIdTx(Vds, ch='n'){
+                    let sweep, filterA, filterB, m=1.0;
+                    sweep = this.n_sweepVds; // Using Vds sweep for now
+                    filterA = (x) => x < this.n_Vt;
+                    filterB = (x) => x >= this.n_Vt;
+                    let IdA = sweep.filter(filterA).map(x => [m*x, 0]);
+                    let IdB = sweep.filter(filterB).map(x => [m*x, 0.5*this.k[ch]*(x - this.n_Vt)**2]);
+                    return IdA.concat(IdB);
+                },
+                setAx(s, labelX, domainX=[0, 10.0], labelY, domainY=[0, 0.2]){
+                    const ax = d3.select(s)
+                        .append("svg")
+                        .attr("width", this.width + this.margin.left + this.margin.right)
+                        .attr("height", this.height + this.margin.top + this.margin.bottom)
+                        .append("g")
+                        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
+                    ax['x'] = d3.scaleLinear()
+                        .domain(domainX)
+                        .range([0, this.width]);
+                    ax.append("g")
+                        .attr("transform", "translate(0," + this.height + ")")
+                        .call(d3.axisBottom(ax.x));
+                    ax['y'] = d3.scaleLinear()
+                        .range([this.height, 0])
+                        .domain(domainY);
+                    ax.append("g").call(d3.axisLeft(ax.y));
+                    ax.append("text")
+                        .attr("class", "x label").attr("text-anchor", "end")
+                        .attr("x", this.width + 10).attr("y", this.height + 30)
+                        .text(labelX);
+                    ax.append("text")
+                        .attr("class", "y label").attr("text-anchor", "end")
+                        .attr("x", -35).attr("y", 20)
+                        .text(labelY);
+                    return ax;
+                },
                 initD3(){
                     // Based on https://d3-graph-gallery.com/graph/density_slider.html
                     this.n_sweepVds = d3.range(0, 10, 0.01);
                     this.p_sweepVds = d3.range(-10, 0, 0.01);
                     
                     // N-MOS
-                    this.n_svg = d3.select("#ax1")
-                        .append("svg")
-                        .attr("width", this.width + this.margin.left + this.margin.right)
-                        .attr("height", this.height + this.margin.top + this.margin.bottom)
-                        .append("g")
-                        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-                    this.n_x = d3.scaleLinear()
-                        .domain([0, 10.0])
-                        .range([0, this.width]);
-                    this.n_svg.append("g")
-                        .attr("transform", "translate(0," + this.height + ")")
-                        .call(d3.axisBottom(this.n_x));
-                    this.n_y = d3.scaleLinear()
-                        .range([this.height, 0])
-                        .domain([0, 0.2]);
-                    this.n_svg.append("g").call(d3.axisLeft(this.n_y));
+                    this.svg.n.ax1 = this.setAx("#ax1", "Vds", [0, 10.0], "Id", [0, 0.2]); // FIXME: this.. = this... ???
 
-                    this.n_pathIdVds = this.n_svg
+                    // Id-Vds (Output)
+                    this.n_pathIdVds = this.svg.n.ax1
                         .append("g").append("path")
-                        .datum(this.getId())
+                        .datum(this.getIdOut())
                         .attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
                         .attr("d",  d3.line()
-                            .x(d => this.n_x(d[0]))
-                            .y(d => this.n_y(d[1]))
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis))
-                    this.n_pathVov = this.n_svg
+                    this.n_pathVov = this.svg.n.ax1
                         .append("g").append("path")
                         .data([[[this.Vov.n, 0], [this.Vov.n, 0.2]]])
-                        .attr("opacity", ".8")
-                        .attr("fill", "none")
+                        .attr("opacity", ".8").attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
                         .attr("stroke-dasharray", "0 4 0")
                         .attr("d",  d3.line()
-                            .x(d => this.n_x(d[0]))
-                            .y(d => this.n_y(d[1]))
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis));
-                    this.n_textVov = this.n_svg
+                    this.n_textVov = this.svg.n.ax1
                         .append("text")
                         .data([[this.Vov.n]])
-                        .attr("x", (d => this.n_x(d)))
+                        .attr("x", (d => this.svg.n.ax1.x(d)))
                         .attr("y", this.height + 30)
                         .text("Vov")
 
-                    this.n_circleQ = this.n_svg
+                    this.n_circleQ = this.svg.n.ax1
                         .append("g").append("circle")
-                        .attr("fill", "#f00")
-                        .attr("stroke", "#000").attr("stroke-width", 1)
-                        .attr("r", "5")
-                        .attr("cx", this.n_x(0))
-                        .attr("cy", this.n_y(0))
-                    
-                    this.n_svg.append("text")
-                        .attr("class", "x label")
-                        .attr("text-anchor", "end")
-                        .attr("x", this.width + 10)
-                        .attr("y", this.height + 30)
-                        .text("Vds");
-                    this.n_svg.append("text")
-                        .attr("class", "y label")
-                        .attr("text-anchor", "end")
-                        .attr("x", -35)
-                        .attr("y", 20)
-                        .text("Id");
+                        .attr("fill", "#f00").attr("stroke", "#000").attr("stroke-width", 1).attr("r", "5")
+                        .attr("cx", this.svg.n.ax1.x(0))
+                        .attr("cy", this.svg.n.ax1.y(0))
+
+                    this.svg.n.ax2 = this.setAx("#ax2", "Vgs", [0, 10.0], "Id", [0, 0.2]);
+
+                    // Id-Vgs (Transfer)
+                    this.svg.n.ax2['pathIdVgs'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .datum(this.getIdTx())
+                        .attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis))
 
                     // P-MOS
-                    this.p_svg = d3.select("#ax2")
+                    this.p_svg = d3.select("#ax3")
                         .append("svg")
                         .attr("width", this.width + this.margin.left + this.margin.right)
                         .attr("height", this.height + this.margin.top + this.margin.bottom)
@@ -247,7 +275,7 @@
 
                     this.p_pathIdVds = this.p_svg
                         .append("g").append("path")
-                        .datum(this.getId())
+                        .datum(this.getIdOut())
                         .attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
                         .attr("d",  d3.line()
@@ -298,37 +326,44 @@
                     //this.n_sVgs = math.format(this.n_Vgs, { notation: 'engineering' });
                     this.n_Vds = this.n_dVds/10.0;
                     this.Vov.n = this.n_Vgs - this.n_Vt;
-                    this.n_Id = this.getId(this.n_Vds);
+                    this.n_Id = this.getIdOut(this.n_Vds);
                     this.n_pathIdVds
-                        .datum(this.getId())
+                        .datum(this.getIdOut())
                         .transition().duration(100)
                         .attr("d",  d3.line()
-                            .x(d => this.n_x(d[0]))
-                            .y(d => this.n_y(d[1]))
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis))
                     this.n_pathVov
                         .data([[[this.Vov.n, 0], [this.Vov.n, 0.2]]])
                         .transition().duration(100)
                         .attr("d",  d3.line()
-                            .x(d => this.n_x(d[0]))
-                            .y(d => this.n_y(d[1]))
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis))
                     this.n_textVov
                         .data([[this.Vov.n]])
-                        .attr("x", (d => this.n_x(d)))
+                        .attr("x", (d => this.svg.n.ax1.x(d)))
                     this.n_circleQ
-                        .data([[this.n_Vds, this.getId(this.n_Vds)]])
+                        .data([[this.n_Vds, this.getIdOut(this.n_Vds)]])
                         .transition().duration(100)
-                        .attr("cx", (d => this.n_x(d[0])))
-                        .attr("cy", (d => this.n_y(d[1])))
+                        .attr("cx", (d => this.svg.n.ax1.x(d[0])))
+                        .attr("cy", (d => this.svg.n.ax1.y(d[1])))
+                    this.svg.n.ax2.pathIdVgs
+                        .datum(this.getIdTx(this.n_Vds))
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis))
                 },
                 updateP(){ /* TODO: reuse code */
                     this.p_Vgs = -1.0*this.p_dVgs/10.0;
                     this.p_Vds = -1.0*this.p_dVds/10.0;
                     this.Vov.p = this.p_Vgs - this.p_Vt;
-                    this.p_Id = this.getId(this.p_Vds, 'p');
+                    this.p_Id = this.getIdOut(this.p_Vds, 'p');
                     this.p_pathIdVds
-                        .datum(this.getId(null, 'p'))
+                        .datum(this.getIdOut(null, 'p'))
                         .transition().duration(100)
                         .attr("d",  d3.line()
                             .x(d => this.p_x(d[0]))
