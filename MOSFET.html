@@ -146,7 +146,7 @@
                     n_textVov: {}, p_textVov: {},
                     n_circleQ: {}, p_circleQ: {},
                     margin: { top: 30, right: 30, bottom: 30, left: 50 },
-                    width: window.innerWidth*0.8 - margin.left - margin.right,
+                    width: Math.min(window.outerWidth*0.8, 700) - margin.left - margin.right,
                     height: 350 - margin.top - margin.bottom,
                 }
             },
@@ -183,13 +183,15 @@
                     }
                 },
                 getIdTx(Vds, ch='n'){
-                    let sweep, filterA, filterB, m=1.0;
+                    let sweep, filterCut, filterSat, filterTri, m=1.0;
                     sweep = this.n_sweepVds; // Using Vds sweep for now
-                    filterA = (x) => x < this.n_Vt;
-                    filterB = (x) => x >= this.n_Vt;
-                    let IdA = sweep.filter(filterA).map(x => [m*x, 0]);
-                    let IdB = sweep.filter(filterB).map(x => [m*x, 0.5*this.k[ch]*(x - this.n_Vt)**2]);
-                    return IdA.concat(IdB);
+                    filterCut = (x) => x < this.n_Vt;
+                    filterSat = (x) => x >= this.n_Vt && x < Vds + this.n_Vt;
+                    filterTri = (x) => x >= Vds + this.n_Vt;
+                    let IdA = sweep.filter(filterCut).map(x => [m*x, 0]);
+                    let IdB = sweep.filter(filterSat).map(x => [m*x, 0.5*this.k[ch]*(x - this.n_Vt)**2]);
+                    let IdC = sweep.filter(filterTri).map(x => [m*x, m*this.k[ch]*(m*(x - this.n_Vt) - m*0.5*Vds)*Vds])
+                    return IdA.concat(IdB).concat(IdC);
                 },
                 setAx(s, labelX, domainX=[0, 10.0], labelY, domainY=[0, 0.2]){
                     const ax = d3.select(s)
@@ -222,6 +224,7 @@
                     // Based on https://d3-graph-gallery.com/graph/density_slider.html
                     this.n_sweepVds = d3.range(0, 10, 0.01);
                     this.p_sweepVds = d3.range(-10, 0, 0.01);
+                    console.log(window.outerWidth)
                     
                     // N-MOS
                     this.svg.n.ax1 = this.setAx("#ax1", "Vds", [0, 10.0], "Id", [0, 0.2]); // FIXME: this.. = this... ???
@@ -271,6 +274,22 @@
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
                             .curve(d3.curveBasis))
+                    this.svg.n.ax2['pathVdsVt'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .data([[[this.n_Vds + this.n_Vt, 0], [this.n_Vds + this.n_Vt, 0.2]]])
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax2['textVdsVt'] = this.svg.n.ax2
+                        .append("text")
+                        .data([[this.n_Vds + this.n_Vt]])
+                        .attr("x", (d => this.svg.n.ax2.x(d)))
+                        .attr("y", this.height + 30)
+                        .text("Vds + Vt")
 
                     // P-MOS
                     this.p_svg = d3.select("#ax3")
@@ -373,6 +392,16 @@
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
                             .curve(d3.curveBasis))
+                    this.svg.n.ax2.pathVdsVt
+                        .data([[[this.n_Vds + this.n_Vt, 0], [this.n_Vds + this.n_Vt, 0.2]]])
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.n.ax2.textVdsVt
+                        .data([[this.n_Vds + this.n_Vt]])
+                        .attr("x", (d => this.svg.n.ax2.x(d)))
                 },
                 updateP(){ /* TODO: reuse code */
                     this.p_Vgs = -1.0*this.p_dVgs/10.0;
