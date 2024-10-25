@@ -32,18 +32,30 @@
                 <h1 class="title has-text-white">MOSFET</h1>
             </div>
             <div class="block"></div>
-            <div class="block center has-background-grey" style="height: 6em">
-                <p class="has-text-white is-hidden-tablet is-hidden-desktop is-hidden-widescreen is-hidden-fullhd">
-                    Please rotate your cellphone
+            <div class="block center has-background-grey" style="height: 8em">
+                <p class="has-text-white is-size-7-mobile is-hidden-tablet is-hidden-desktop is-hidden-widescreen is-hidden-fullhd">
+                    \( \text{N-MOS} \begin{cases}
+                        v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
+                        v_{GS} = V_{tn} + v_{OV}
+                    \end{cases}
+                    \)
+                    \(
+                    v_{GS} = V_{tn} + v_{OV} \begin{cases}
+                        v_{GD} \gt V_{tn}, v_{DS} \lt v_{OV}, \\
+                            \qquad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
+                        v_{GD} \leq V_{tn}, v_{DS} \geq v_{OV}, \\
+                            \qquad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2
+                    \end{cases}
+                    \)
                 </p>
                 <p class="has-text-white is-hidden-mobile">
-                \( \text{N-MOS} \begin{cases}
-                v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
-                v_{GS} = V_{tn} + v_{OV} \begin{cases}
-                    v_{GD} \gt V_{tn},\quad v_{DS} \lt v_{OV},\quad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
-                    v_{GD} \leq V_{tn},\quad v_{DS} \geq v_{OV},\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2
-                    \end{cases}\end{cases}
-                \)
+                    \( \text{N-MOS} \begin{cases}
+                        v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
+                        v_{GS} = V_{tn} + v_{OV} \begin{cases}
+                        v_{GD} \gt V_{tn},\quad v_{DS} \lt v_{OV},\quad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
+                        v_{GD} \leq V_{tn},\quad v_{DS} \geq v_{OV},\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2
+                        \end{cases}\end{cases}
+                    \)
                 </p>
             </div>
             <div class="block has-background-grey">
@@ -111,6 +123,8 @@
             data(){
                 const margin = { top: 30, right: 30, bottom: 30, left: 50 };
                 return {
+                    landscape: "portrait", // Default orientation
+                    nMosLatex: "Please rotate your cellphone",
                     k: { n:0.005, p:0.005 },
                     n_Vt: 1, p_Vt: -1,
                     modeP: true,
@@ -137,6 +151,9 @@
                 }
             },
             methods: {
+                updateOrientation() {
+                    this.landscape = window.matchMedia("(orientation: portrait)").matches ? false : true;
+                },
                 getIdOut(Vds=null, ch='n'){
                     let sweep, filterA, filterB, m=1.0;
                     if(ch==='n'){
@@ -388,6 +405,18 @@
                         .attr("cy", (d => this.p_y(d[1])))
                 }
             }, /* methods */
+            mounted() {
+                // Initial orientation check
+                this.updateOrientation();
+                // Listen to orientationchange and resize events
+                window.addEventListener("orientationchange", this.updateOrientation);
+                window.addEventListener("resize", this.updateOrientation);
+            },
+            beforeDestroy() {
+                // Clean up event listeners
+                window.removeEventListener("orientationchange", this.updateOrientation);
+                window.removeEventListener("resize", this.updateOrientation);
+            },
         }); /* Vue.createApp */
         const vm = app.mount('#app');
 
