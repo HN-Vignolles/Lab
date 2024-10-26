@@ -44,7 +44,7 @@
                         v_{GD} \gt V_{tn}, v_{DS} \lt v_{OV}, \\
                             \qquad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
                         v_{GD} \leq V_{tn}, v_{DS} \geq v_{OV}, \\
-                            \qquad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2
+                            \qquad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2(1+\lambda v_{DS})
                     \end{cases}
                     \)
                 </p>
@@ -53,7 +53,7 @@
                         v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
                         v_{GS} = V_{tn} + v_{OV} \begin{cases}
                         v_{GD} \gt V_{tn},\quad v_{DS} \lt v_{OV},\quad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
-                        v_{GD} \leq V_{tn},\quad v_{DS} \geq v_{OV},\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2
+                        v_{GD} \leq V_{tn},\quad v_{DS} \geq v_{OV},\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2(1 + \lambda v_{DS})
                         \end{cases}\end{cases}
                     \)
                 </p>
@@ -61,13 +61,13 @@
             <div class="block has-background-grey">
                 <div class="columns">
                     <div class="column center has-text-white">
-                        <span>N-MOS: \( \quad V_T = {{ n_Vt }}\text{V},\; k_p= {{ k.n }}\frac{\text{A}}{\text{V}^2} \)</span>
+                        <span>N-MOS: \( \quad V_T = {{ n.Vt }}\text{V},\; k_p= {{ n.k }}\frac{\text{A}}{\text{V}^2} \)</span>
                     </div>
-                    <div class="column has-text-white">Vgs <input type="range" name="VgsSlider" id=vgs-slider min="10" max="100" @change="updateN" v-model="n_dVgs"/>
-                        &nbsp; {{ n_Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - V_T = \)</span> {{ Vov.n.toFixed(2) }} V
+                    <div class="column has-text-white">Vgs <input type="range" name="VgsSlider" id=vgs-slider min="10" max="100" @change="updateN" v-model="n.dVgs"/>
+                        &nbsp; {{ n.Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - V_T = \)</span> {{ n.Vov.toFixed(2) }} V
                     </div>
-                    <div class="column has-text-white">Vds <input type="range" name="VdsSlider" id=vds-slider min="10" max="100" @change="updateN" v-model="n_dVds"/>
-                        &nbsp; {{ n_Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ n_Id.toFixed(4) }} A
+                    <div class="column has-text-white">Vds <input type="range" name="VdsSlider" id=vds-slider min="10" max="100" @change="updateN" v-model="n.dVds"/>
+                        &nbsp; {{ n.Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ n.Id.toFixed(4) }} A
                     </div>
                 </div>
             </div>
@@ -92,19 +92,19 @@
             <div class="block has-background-grey">
                 <div class="columns">
                     <div class="column center has-text-white">
-                        <span>P-MOS: \( \quad V_T = {{ p_Vt }}\text{V},\; k_p= {{ k.p }}\frac{\text{A}}{\text{V}^2} \)</span>
+                        <span>P-MOS: \( \quad V_T = {{ p.Vt }}\text{V},\; k_p= {{ p.k }}\frac{\text{A}}{\text{V}^2} \)</span>
                     </div>
                     <div class="column center has-text-white">
                         <input type="checkbox" id="pos" name="pos" v-model="test" checked /><label for="pos">Positive V</label>
                     </div>
                     <div class="column has-text-white">
-                        {{ (modeP===true) ? 'Vsg' : 'Vgs' }}<input type="range" name="VsgSlider" id=vsg-slider min="10" max="100" @change="updateP" v-model="p_dVgs"/>
-                        &nbsp; {{ (modeP===true) ? -1.0*p_Vgs : p_Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - |V_T| = \)</span>
-                        {{ (modeP===true) ? -1.0*Vov.p.toFixed(2) : Vov.p.toFixed(2) }} V
+                        {{ (modeP===true) ? 'Vsg' : 'Vgs' }}<input type="range" name="VsgSlider" id=vsg-slider min="10" max="100" @change="updateP" v-model="p.dVgs"/>
+                        &nbsp; {{ (modeP===true) ? -1.0*p.Vgs : p.Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - |V_T| = \)</span>
+                        {{ (modeP===true) ? -1.0*p.Vov.toFixed(2) : p.Vov.toFixed(2) }} V
                     </div>
                     <div class="column has-text-white">
-                        {{ (modeP===true) ? 'Vsd' : 'Vds' }}<input type="range" name="VsdSlider" id=vsd-slider min="10" max="100" @change="updateP" v-model="p_dVds"/>
-                        &nbsp; {{ (modeP===true) ? -1.0*p_Vds : p_Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ p_Id.toFixed(4) }} A
+                        {{ (modeP===true) ? 'Vsd' : 'Vds' }}<input type="range" name="VsdSlider" id=vsd-slider min="10" max="100" @change="updateP" v-model="p.dVds"/>
+                        &nbsp; {{ (modeP===true) ? -1.0*p.Vds : p.Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ p.Id.toFixed(4) }} A
                     </div>
                 </div>
             </div>
@@ -125,24 +125,15 @@
                 return {
                     landscape: "portrait", // Default orientation
                     nMosLatex: "Please rotate your cellphone",
-                    k: { n:0.005, p:0.005 },
-                    n_Vt: 1, p_Vt: -1,
+                    /* dVgs: decade for the slider */
+                    n: { k:0.004, Vt:1, dVgs:20, dVds:30, Vgs:0.2, Vds:0.3, Vov:0, sweepVds:[], Id:0 },
+                    p: { k:0.005, Vt:-1, dVgs:20, dVds:30, Vgs:-0.2, Vds:-0.3, Vov:0, sweepVds:[], Id:0 },
                     modeP: true,
-                    n_dVgs: 20, p_dVgs: 20, // decade for the slider
-                    n_dVds: 30, p_dVds: 30,
-                    n_Vgs: 0.2, p_Vgs: -0.2,
-                    n_Vds: 0.3, p_Vds: -0.3,
-                    Vov: { n:0, p:0 },
                     test: {},
-                    n_Id: 0, p_Id: 0,
                     n_sVgs: "",
                     svg: { n:{ ax1:{}, ax2:{} }, p:{ ax3:{}, ax4:{}} },
-                    p_x: {},
-                    p_y: {},
-                    n_sweepVds: [], p_sweepVds: [],
-                    sweepVgs: {n:[], p:[] },
-                    n_pathIdVds: {}, p_pathIdVds: {}, // D3 trace (plot): Id vs Vds
-                    n_pathVov: {}, p_pathVov: {},
+                    p_pathIdVds: {}, // D3 trace (plot): Id vs Vds
+                    p_pathVov: {},
                     n_textVov: {}, p_textVov: {},
                     n_circleQ: {}, p_circleQ: {},
                     margin: { top: 30, right: 30, bottom: 30, left: 50 },
@@ -157,18 +148,18 @@
                 getIdOut(Vds=null, ch='n'){
                     let sweep, filterA, filterB, m=1.0;
                     if(ch==='n'){
-                        sweep = this.n_sweepVds;
-                        filterA = (x) => x < this.Vov[ch];
-                        filterB = (x) => x >= this.Vov[ch];
+                        sweep = this.n.sweepVds;
+                        filterA = (x) => x < this[ch].Vov;
+                        filterB = (x) => x >= this[ch].Vov;
                     } else {
-                        sweep = this.p_sweepVds;
+                        sweep = this.p.sweepVds;
                         if (this.modeP===true) m = -1.0;
-                        filterA = (x) => x >= this.Vov[ch];
-                        filterB = (x) => x < this.Vov[ch];
+                        filterA = (x) => x >= this[ch].Vov;
+                        filterB = (x) => x < this[ch].Vov;
                     }
                     if(Vds === null){
-                        let IdA = sweep.filter(filterA).map(x => [m*x, m*this.k[ch]*(m*this.Vov[ch] - m*0.5*x)*x]);
-                        let IdB = sweep.filter(filterB).map(x => [m*x, 0.5*this.k[ch]*(this.Vov[ch])**2]);
+                        let IdA = sweep.filter(filterA).map(x => [m*x, m*this[ch].k*(m*this[ch].Vov - m*0.5*x)*x]);
+                        let IdB = sweep.filter(filterB).map(x => [m*x, 0.5*this[ch].k*(this[ch].Vov)**2]);
                         let Id;
                         if(ch==='n')
                             Id = IdA.concat(IdB);
@@ -176,22 +167,27 @@
                             Id = IdB.concat(IdA);
                         return Id;
                     } else {
-                        if((ch==='n' && Vds < this.Vov[ch]) || (ch==='p') && Vds >= this.Vov[ch])
-                            return m*this.k[ch]*(m*this.Vov[ch] - m*0.5*Vds)*Vds;
+                        if((ch==='n' && Vds < this[ch].Vov) || (ch==='p') && Vds >= this[ch].Vov)
+                            return m*this[ch].k*(m*this[ch].Vov - m*0.5*Vds)*Vds;
                         else
-                            return 0.5*this.k[ch]*(this.Vov[ch])**2;
+                            return 0.5*this[ch].k*(this[ch].Vov)**2;
                     }
                 },
                 getIdTx(Vds, ch='n'){
                     let sweep, filterCut, filterSat, filterTri, m=1.0;
-                    sweep = this.n_sweepVds; // Using Vds sweep for now
-                    filterCut = (x) => x < this.n_Vt;
-                    filterSat = (x) => x >= this.n_Vt && x < Vds + this.n_Vt;
-                    filterTri = (x) => x >= Vds + this.n_Vt;
+                    sweep = this.n.sweepVds; // Using Vds sweep for now
+                    filterCut = (x) => x < this.n.Vt;
+                    filterSat = (x) => x >= this.n.Vt && x < Vds + this.n.Vt;
+                    filterTri = (x) => x >= Vds + this.n.Vt;
                     let IdA = sweep.filter(filterCut).map(x => [m*x, 0]);
-                    let IdB = sweep.filter(filterSat).map(x => [m*x, 0.5*this.k[ch]*(x - this.n_Vt)**2]);
-                    let IdC = sweep.filter(filterTri).map(x => [m*x, m*this.k[ch]*(m*(x - this.n_Vt) - m*0.5*Vds)*Vds])
+                    let IdB = sweep.filter(filterSat).map(x => [m*x, 0.5*this[ch].k*(x - this.n.Vt)**2]);
+                    let IdC = sweep.filter(filterTri).map(x => [m*x, m*this[ch].k*(m*(x - this.n.Vt) - m*0.5*Vds)*Vds])
                     return IdA.concat(IdB).concat(IdC);
+                },
+                getBoundary(ch='n'){
+                    const Id = this.n.sweepVds.map(x => [x, 0.5*this[ch].k*x**2]);
+                    console.log(Id);
+                    return Id;
                 },
                 setAx(s, labelX, domainX=[0, 10.0], labelY, domainY=[0, 0.2]){
                     const ax = d3.select(s)
@@ -222,15 +218,13 @@
                 },
                 initD3(){
                     // Based on https://d3-graph-gallery.com/graph/density_slider.html
-                    this.n_sweepVds = d3.range(0, 10, 0.01);
-                    this.p_sweepVds = d3.range(-10, 0, 0.01);
-                    console.log(window.outerWidth)
+                    this.n.sweepVds = d3.range(0, 10, 0.01);
+                    this.p.sweepVds = d3.range(-10, 0, 0.01);
                     
                     // N-MOS
-                    this.svg.n.ax1 = this.setAx("#ax1", "Vds", [0, 10.0], "Id", [0, 0.2]); // FIXME: this.. = this... ???
-
                     // Id-Vds (Output)
-                    this.n_pathIdVds = this.svg.n.ax1
+                    this.svg.n.ax1 = this.setAx("#ax1", "Vds", [0, 10.0], "Id", [0, 0.15]); // FIXME: this.. = this... ???
+                    this.svg.n.ax1['pathIdVds'] = this.svg.n.ax1
                         .append("g").append("path")
                         .datum(this.getIdOut())
                         .attr("fill", "none")
@@ -238,10 +232,10 @@
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax1.x(d[0]))
                             .y(d => this.svg.n.ax1.y(d[1]))
-                            .curve(d3.curveBasis))
-                    this.n_pathVov = this.svg.n.ax1
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax1['pathBoundary'] = this.svg.n.ax1
                         .append("g").append("path")
-                        .data([[[this.Vov.n, 0], [this.Vov.n, 0.2]]])
+                        .datum(this.getBoundary())
                         .attr("opacity", ".8").attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
                         .attr("stroke-dasharray", "0 4 0")
@@ -249,22 +243,31 @@
                             .x(d => this.svg.n.ax1.x(d[0]))
                             .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis));
-                    this.n_textVov = this.svg.n.ax1
+                    this.svg.n.ax1['pathVov'] = this.svg.n.ax1
+                        .append("g").append("path")
+                        .data([[[this.n.Vov, 0], [this.n.Vov, 0.2]]])
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax1['textVov'] = this.svg.n.ax1
                         .append("text")
-                        .data([[this.Vov.n]])
+                        .data([[this.n.Vov]])
                         .attr("x", (d => this.svg.n.ax1.x(d)))
                         .attr("y", this.height + 30)
-                        .text("Vov")
+                        .text("Vov");
 
                     this.n_circleQ = this.svg.n.ax1
                         .append("g").append("circle")
                         .attr("fill", "#f00").attr("stroke", "#000").attr("stroke-width", 1).attr("r", "5")
                         .attr("cx", this.svg.n.ax1.x(0))
-                        .attr("cy", this.svg.n.ax1.y(0))
-
-                    this.svg.n.ax2 = this.setAx("#ax2", "Vgs", [0, 10.0], "Id", [0, 0.2]);
+                        .attr("cy", this.svg.n.ax1.y(0));
 
                     // Id-Vgs (Transfer)
+                    this.svg.n.ax2 = this.setAx("#ax2", "Vgs", [0, 10.0], "Id", [0, 0.15]);
                     this.svg.n.ax2['pathIdVgs'] = this.svg.n.ax2
                         .append("g").append("path")
                         .datum(this.getIdTx())
@@ -273,10 +276,10 @@
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
-                            .curve(d3.curveBasis))
+                            .curve(d3.curveBasis));
                     this.svg.n.ax2['pathVdsVt'] = this.svg.n.ax2
                         .append("g").append("path")
-                        .data([[[this.n_Vds + this.n_Vt, 0], [this.n_Vds + this.n_Vt, 0.2]]])
+                        .data([[[this.n.Vds + this.n.Vt, 0], [this.n.Vds + this.n.Vt, 0.2]]])
                         .attr("opacity", ".8").attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
                         .attr("stroke-dasharray", "0 4 0")
@@ -286,152 +289,122 @@
                             .curve(d3.curveBasis));
                     this.svg.n.ax2['textVdsVt'] = this.svg.n.ax2
                         .append("text")
-                        .data([[this.n_Vds + this.n_Vt]])
+                        .data([[this.n.Vds + this.n.Vt]])
                         .attr("x", (d => this.svg.n.ax2.x(d)))
                         .attr("y", this.height + 30)
-                        .text("Vds + Vt")
+                        .text("Vds + Vt");
 
                     // P-MOS
-                    this.p_svg = d3.select("#ax3")
-                        .append("svg")
-                        .attr("width", this.width + this.margin.left + this.margin.right)
-                        .attr("height", this.height + this.margin.top + this.margin.bottom)
-                        .append("g")
-                        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
-                    this.p_x = d3.scaleLinear()
-                        .domain([0, 10.0])
-                        .range([0, this.width]);
-                    this.p_svg.append("g")
-                        .attr("transform", "translate(0," + this.height + ")")
-                        .call(d3.axisBottom(this.p_x));
-                    this.p_y = d3.scaleLinear()
-                        .range([this.height, 0])
-                        .domain([0, 0.2]);
-                    this.p_svg.append("g").call(d3.axisLeft(this.p_y));
-
-                    this.p_pathIdVds = this.p_svg
+                    this.svg.p.ax3 = this.setAx("#ax3", "Vds", [0, 10.0], "Id", [0, 0.2]);
+                    this.svg.p.ax3['pathIdVds'] = this.svg.p.ax3
                         .append("g").append("path")
                         .datum(this.getIdOut())
                         .attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
                         .attr("d",  d3.line()
-                            .x(d => this.p_x(d[0]))
-                            .y(d => this.p_y(d[1]))
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
                             .curve(d3.curveBasis))
-                    this.p_pathVov = this.p_svg
+                    this.svg.p.ax3['pathVov'] = this.svg.p.ax3
                         .append("g").append("path")
-                        .data([[[this.Vov.p, 0], [this.Vov.p, 0.2]]])
+                        .data([[[this.p.Vov, 0], [this.p.Vov, 0.2]]])
                         .attr("opacity", ".8")
                         .attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
                         .attr("stroke-dasharray", "0 4 0")
                         .attr("d",  d3.line()
-                            .x(d => this.p_x(d[0]))
-                            .y(d => this.p_y(d[1]))
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
                             .curve(d3.curveBasis));
-                    this.p_textVov = this.p_svg
+                    this.svg.p.ax3['textVov'] = this.svg.p.ax3
                         .append("text")
-                        .data([[this.Vov.p]])
-                        .attr("x", (d => this.p_x(d)))
+                        .data([[this.p.Vov]])
+                        .attr("x", (d => this.svg.p.ax3.x(d)))
                         .attr("y", this.height + 30)
                         .text("Vov")
-
-                    this.p_circleQ = this.p_svg
+                    this.svg.p.ax3['circleQ'] = this.svg.p.ax3
                         .append("g").append("circle")
                         .attr("fill", "#f00")
                         .attr("stroke", "#000").attr("stroke-width", 1)
                         .attr("r", "5")
-                        .attr("cx", this.p_x(0))
-                        .attr("cy", this.p_y(0))
-                    
-                    this.p_svg.append("text")
-                        .attr("class", "x label")
-                        .attr("text-anchor", "end")
-                        .attr("x", this.width + 10)
-                        .attr("y", this.height + 30)
-                        .text("Vsd");
-                    this.p_svg.append("text")
-                        .attr("class", "y label")
-                        .attr("text-anchor", "end")
-                        .attr("x", -35)
-                        .attr("y", 20)
-                        .text("Id");
+                        .attr("cx", this.svg.p.ax3.x(0))
+                        .attr("cy", this.svg.p.ax3.y(0))
                 },
                 updateN(){
-                    this.n_Vgs = this.n_dVgs/10.0;
-                    //this.n_sVgs = math.format(this.n_Vgs, { notation: 'engineering' });
-                    this.n_Vds = this.n_dVds/10.0;
-                    this.Vov.n = this.n_Vgs - this.n_Vt;
-                    this.n_Id = this.getIdOut(this.n_Vds);
-                    this.n_pathIdVds
+                    this.n.Vgs = this.n.dVgs/10.0;
+                    //this.n_sVgs = math.format(this.n.Vgs, { notation: 'engineering' });
+                    this.n.Vds = this.n.dVds/10.0;
+                    this.n.Vov = this.n.Vgs - this.n.Vt;
+                    this.n.Id = this.getIdOut(this.n.Vds);
+                    this.svg.n.ax1.pathIdVds
                         .datum(this.getIdOut())
                         .transition().duration(100)
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax1.x(d[0]))
                             .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis))
-                    this.n_pathVov
-                        .data([[[this.Vov.n, 0], [this.Vov.n, 0.2]]])
+                    this.svg.n.ax1.pathVov
+                        .data([[[this.n.Vov, 0], [this.n.Vov, 0.2]]])
                         .transition().duration(100)
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax1.x(d[0]))
                             .y(d => this.svg.n.ax1.y(d[1]))
                             .curve(d3.curveBasis))
-                    this.n_textVov
-                        .data([[this.Vov.n]])
+                    this.svg.n.ax1.textVov
+                        .data([[this.n.Vov]])
                         .attr("x", (d => this.svg.n.ax1.x(d)))
                     this.n_circleQ
-                        .data([[this.n_Vds, this.getIdOut(this.n_Vds)]])
+                        .data([[this.n.Vds, this.getIdOut(this.n.Vds)]])
                         .transition().duration(100)
                         .attr("cx", (d => this.svg.n.ax1.x(d[0])))
                         .attr("cy", (d => this.svg.n.ax1.y(d[1])))
                     this.svg.n.ax2.pathIdVgs
-                        .datum(this.getIdTx(this.n_Vds))
+                        .datum(this.getIdTx(this.n.Vds))
                         .transition().duration(100)
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
                             .curve(d3.curveBasis))
                     this.svg.n.ax2.pathVdsVt
-                        .data([[[this.n_Vds + this.n_Vt, 0], [this.n_Vds + this.n_Vt, 0.2]]])
+                        .data([[[this.n.Vds + this.n.Vt, 0], [this.n.Vds + this.n.Vt, 0.2]]])
                         .transition().duration(100)
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
                             .curve(d3.curveBasis))
                     this.svg.n.ax2.textVdsVt
-                        .data([[this.n_Vds + this.n_Vt]])
+                        .data([[this.n.Vds + this.n.Vt]])
                         .attr("x", (d => this.svg.n.ax2.x(d)))
                 },
                 updateP(){ /* TODO: reuse code */
-                    this.p_Vgs = -1.0*this.p_dVgs/10.0;
-                    this.p_Vds = -1.0*this.p_dVds/10.0;
-                    this.Vov.p = this.p_Vgs - this.p_Vt;
-                    this.p_Id = this.getIdOut(this.p_Vds, 'p');
-                    this.p_pathIdVds
+                    this.p.Vgs = -1.0*this.p.dVgs/10.0;
+                    this.p.Vds = -1.0*this.p.dVds/10.0;
+                    this.p.Vov = this.p.Vgs - this.p.Vt;
+                    this.p.Id = this.getIdOut(this.p.Vds, 'p');
+                    this.svg.p.ax3.pathIdVds
                         .datum(this.getIdOut(null, 'p'))
                         .transition().duration(100)
                         .attr("d",  d3.line()
-                            .x(d => this.p_x(d[0]))
-                            .y(d => this.p_y(d[1]))
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
                             .curve(d3.curveBasis))
-                    const Vov = (this.modeP===true) ? -1.0*this.Vov.p : this.Vov.p;
-                    this.p_pathVov
+                    const Vov = (this.modeP===true) ? -1.0*this.p.Vov : this.p.Vov;
+                    this.svg.p.ax3.pathVov
                         .data([[[Vov, 0], [Vov, 0.2]]])
                         .transition().duration(100)
                         .attr("d",  d3.line()
-                            .x(d => this.p_x(d[0]))
-                            .y(d => this.p_y(d[1]))
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
                             .curve(d3.curveBasis))
-                    this.p_textVov
+                    this.svg.p.ax3.textVov
                         .data([[Vov]])
-                        .attr("x", (d => this.p_x(d)))
-                    const Vds = (this.modeP===true) ? -1.0*this.p_Vds : this.p_Vds;
-                    this.p_circleQ
-                        .data([[Vds, this.p_Id]])
+                        .attr("x", (d => this.svg.p.ax3.x(d)))
+                    const Vds = (this.modeP===true) ? -1.0*this.p.Vds : this.p.Vds;
+                    this.svg.p.ax3.circleQ
+                        .data([[Vds, this.p.Id]])
                         .transition().duration(100)
-                        .attr("cx", (d => this.p_x(d[0])))
-                        .attr("cy", (d => this.p_y(d[1])))
+                        .attr("cx", (d => this.svg.p.ax3.x(d[0])))
+                        .attr("cy", (d => this.svg.p.ax3.y(d[1])))
                 }
             }, /* methods */
             mounted() {
