@@ -79,7 +79,7 @@
                 <div class="column"></div>
             </div>
             <div class="block center has-background-grey" style="height: 6em">
-                <p class="has-text-white is-hidden-mobile">
+                <p class="has-text-white">
                 \( \text{P-MOS} \begin{cases}
                 v_{GS} \gt V_{tp} \;\equiv\; v_{SG} \lt |V_{tp}|, \qquad \text{cutoff} \\
                 v_{SG} = |V_{tp}| + |v_{OV}| \begin{cases}
@@ -185,9 +185,7 @@
                     return IdA.concat(IdB).concat(IdC);
                 },
                 getBoundary(ch='n'){
-                    const Id = this.n.sweepVds.map(x => [x, 0.5*this[ch].k*x**2]);
-                    console.log(Id);
-                    return Id;
+                    return this.n.sweepVds.map(x => [x, 0.5*this[ch].k*x**2]);
                 },
                 setAx(s, labelX, domainX=[0, 10.0], labelY, domainY=[0, 0.2]){
                     const ax = d3.select(s)
@@ -235,7 +233,8 @@
                             .curve(d3.curveBasis));
                     this.svg.n.ax1['pathBoundary'] = this.svg.n.ax1
                         .append("g").append("path")
-                        .datum(this.getBoundary())
+                        .datum(this.n.sweepVds
+                            .map(x => [x, 0.5*this.n.k*x**2]))
                         .attr("opacity", ".8").attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
                         .attr("stroke-dasharray", "0 4 0")
@@ -273,6 +272,18 @@
                         .datum(this.getIdTx())
                         .attr("fill", "none")
                         .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax2['pathBoundary'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .datum(this.n.sweepVds
+                            .filter(x => x > this.n.Vt)
+                            .map(x => [x, 0.5*this.n.k*(x - this.n.Vt)**2]))
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
                         .attr("d",  d3.line()
                             .x(d => this.svg.n.ax2.x(d[0]))
                             .y(d => this.svg.n.ax2.y(d[1]))
