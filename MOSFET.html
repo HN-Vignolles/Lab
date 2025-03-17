@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <title>MOSFET</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.1.1/math.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay {
+            position: absolute;
+        }
+        body {
+            background-color: black;
+        }
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <section class="hero has-background-red" id="app" v-cloak>
+        <div class="hero-body has-background-dark">
+            <div class="container center">
+                <h1 class="title has-text-white">MOSFET</h1>
+            </div>
+            <div class="block"></div>
+            <div class="block center has-background-grey" style="height: 8em">
+                <p class="has-text-white is-size-7-mobile is-hidden-tablet is-hidden-desktop is-hidden-widescreen is-hidden-fullhd">
+                    \( \text{N-MOS} \begin{cases}
+                        v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
+                        v_{GS} = V_{tn} + v_{OV}
+                    \end{cases}
+                    \)
+                    \(
+                    v_{GS} = V_{tn} + v_{OV} \begin{cases}
+                        v_{GD} \gt V_{tn}, v_{DS} \lt v_{OV}, \\
+                            \qquad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
+                        v_{GD} \leq V_{tn}, v_{DS} \geq v_{OV}, \\
+                            \qquad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2(1+\lambda v_{DS})
+                    \end{cases}
+                    \)
+                </p>
+                <p class="has-text-white is-hidden-mobile">
+                    \( \text{N-MOS} \begin{cases}
+                        v_{GS} \lt V_{tn}, \qquad \text{cutoff} \\
+                        v_{GS} = V_{tn} + v_{OV} \begin{cases}
+                        v_{GD} \gt V_{tn},\quad v_{DS} \lt v_{OV},\quad i_D = k'_n\frac{W}{L}(v_{OV} - v_{DS}/2)v_{DS} \\
+                        v_{GD} \leq V_{tn},\quad v_{DS} \geq v_{OV},\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{GS}-V_{tn})^2(1 + \lambda v_{DS})
+                        \end{cases}\end{cases}
+                    \)
+                </p>
+            </div>
+            <div class="block has-background-grey">
+                <div class="columns">
+                    <div class="column center has-text-white">
+                        <span>N-MOS: \( \quad V_T = {{ n.Vt }}\text{V},\; k_p= {{ n.k }}\frac{\text{A}}{\text{V}^2} \)</span>
+                    </div>
+                    <div class="column has-text-white">Vgs <input type="range" name="VgsSlider" id=vgs-slider min="10" max="100" @change="updateN" v-model="n.dVgs"/>
+                        &nbsp; {{ n.Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - V_T = \)</span> {{ n.Vov.toFixed(2) }} V
+                    </div>
+                    <div class="column has-text-white">Vds <input type="range" name="VdsSlider" id=vds-slider min="10" max="100" @change="updateN" v-model="n.dVds"/>
+                        &nbsp; {{ n.Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ n.Id.toFixed(4) }} A
+                    </div>
+                </div>
+            </div>
+            <div class="block"></div>
+            <div class="columns has-background-white">
+                <div class="column"></div>
+                <div class="column" id="ax1"></div>
+                <div class="column" id="ax2"></div>
+                <div class="column"></div>
+            </div>
+            <div class="block center has-background-grey" style="height: 6em">
+                <p class="has-text-white">
+                \( \text{P-MOS} \begin{cases}
+                v_{GS} \gt V_{tp} \;\equiv\; v_{SG} \lt |V_{tp}|, \qquad \text{cutoff} \\
+                v_{SG} = |V_{tp}| + |v_{OV}| \begin{cases}
+                    v_{DG} \gt |V_{tp}|,\quad v_{SD} \lt |v_{OV}|,\quad i_D = k'_n\frac{W}{L}(|v_{OV}| - v_{SD}/2)v_{SD} \\
+                    v_{DG} \leq |V_{tp}|,\quad v_{SD} \geq |v_{OV}|,\quad i_D = \frac{1}{2}k'_n\frac{W}{L}(v_{SG}-|V_{tn}|)^2
+                    \end{cases}\end{cases}
+                \)
+                </p>
+            </div>
+            <div class="block has-background-grey">
+                <div class="columns">
+                    <div class="column center has-text-white">
+                        <span>P-MOS: \( \quad V_T = {{ p.Vt }}\text{V},\; k_p= {{ p.k }}\frac{\text{A}}{\text{V}^2} \)</span>
+                    </div>
+                    <div class="column center has-text-white">
+                        <input type="checkbox" id="pos" name="pos" v-model="test" checked /><label for="pos">Positive V</label>
+                    </div>
+                    <div class="column has-text-white">
+                        {{ (modeP===true) ? 'Vsg' : 'Vgs' }}<input type="range" name="VsgSlider" id=vsg-slider min="10" max="100" @change="updateP" v-model="p.dVgs"/>
+                        &nbsp; {{ (modeP===true) ? -1.0*p.Vgs : p.Vgs }} V <span>\( \quad\Rightarrow\quad V_{OV} = v_{GS} - |V_T| = \)</span>
+                        {{ (modeP===true) ? -1.0*p.Vov.toFixed(2) : p.Vov.toFixed(2) }} V
+                    </div>
+                    <div class="column has-text-white">
+                        {{ (modeP===true) ? 'Vsd' : 'Vds' }}<input type="range" name="VsdSlider" id=vsd-slider min="10" max="100" @change="updateP" v-model="p.dVds"/>
+                        &nbsp; {{ (modeP===true) ? -1.0*p.Vds : p.Vds }} V <span>\( \qquad I_{DQ} = \)</span>{{ p.Id.toFixed(4) }} A
+                    </div>
+                </div>
+            </div>
+            <div class="block"></div>
+            <div class="columns has-background-white">
+                <div class="column"></div>
+                <div class="column" id="ax3"></div>
+                <div class="column" id="ax4"></div>
+                <div class="column"></div>
+            </div>
+        </div>
+    </section>
+    <script>
+        "use strict"
+        let app = Vue.createApp({
+            data(){
+                const margin = { top: 30, right: 30, bottom: 30, left: 50 };
+                return {
+                    landscape: "portrait", // Default orientation
+                    nMosLatex: "Please rotate your cellphone",
+                    /* dVgs: decade for the slider */
+                    n: { k:0.004, Vt:1, dVgs:20, dVds:30, Vgs:0.2, Vds:0.3, Vov:0, sweepVds:[], Id:0 },
+                    p: { k:0.005, Vt:-1, dVgs:20, dVds:30, Vgs:-0.2, Vds:-0.3, Vov:0, sweepVds:[], Id:0 },
+                    modeP: true,
+                    test: {},
+                    n_sVgs: "",
+                    svg: { n:{ ax1:{}, ax2:{} }, p:{ ax3:{}, ax4:{}} },
+                    p_pathIdVds: {}, // D3 trace (plot): Id vs Vds
+                    p_pathVov: {},
+                    n_textVov: {}, p_textVov: {},
+                    n_circleQ: {}, p_circleQ: {},
+                    margin: { top: 30, right: 30, bottom: 30, left: 50 },
+                    width: Math.min(window.outerWidth*0.8, 700) - margin.left - margin.right,
+                    height: 350 - margin.top - margin.bottom,
+                }
+            },
+            methods: {
+                updateOrientation() {
+                    this.landscape = window.matchMedia("(orientation: portrait)").matches ? false : true;
+                },
+                getIdOut(Vds=null, ch='n'){
+                    let sweep, filterA, filterB, m=1.0;
+                    if(ch==='n'){
+                        sweep = this.n.sweepVds;
+                        filterA = (x) => x < this[ch].Vov;
+                        filterB = (x) => x >= this[ch].Vov;
+                    } else {
+                        sweep = this.p.sweepVds;
+                        if (this.modeP===true) m = -1.0;
+                        filterA = (x) => x >= this[ch].Vov;
+                        filterB = (x) => x < this[ch].Vov;
+                    }
+                    if(Vds === null){
+                        let IdA = sweep.filter(filterA).map(x => [m*x, m*this[ch].k*(m*this[ch].Vov - m*0.5*x)*x]);
+                        let IdB = sweep.filter(filterB).map(x => [m*x, 0.5*this[ch].k*(this[ch].Vov)**2]);
+                        let Id;
+                        if(ch==='n')
+                            Id = IdA.concat(IdB);
+                        else
+                            Id = IdB.concat(IdA);
+                        return Id;
+                    } else {
+                        if((ch==='n' && Vds < this[ch].Vov) || (ch==='p') && Vds >= this[ch].Vov)
+                            return m*this[ch].k*(m*this[ch].Vov - m*0.5*Vds)*Vds;
+                        else
+                            return 0.5*this[ch].k*(this[ch].Vov)**2;
+                    }
+                },
+                getIdTx(Vds, ch='n'){
+                    let sweep, filterCut, filterSat, filterTri, m=1.0;
+                    sweep = this.n.sweepVds; // Using Vds sweep for now
+                    filterCut = (x) => x < this.n.Vt;
+                    filterSat = (x) => x >= this.n.Vt && x < Vds + this.n.Vt;
+                    filterTri = (x) => x >= Vds + this.n.Vt;
+                    let IdA = sweep.filter(filterCut).map(x => [m*x, 0]);
+                    let IdB = sweep.filter(filterSat).map(x => [m*x, 0.5*this[ch].k*(x - this.n.Vt)**2]);
+                    let IdC = sweep.filter(filterTri).map(x => [m*x, m*this[ch].k*(m*(x - this.n.Vt) - m*0.5*Vds)*Vds])
+                    return IdA.concat(IdB).concat(IdC);
+                },
+                getBoundary(ch='n'){
+                    return this.n.sweepVds.map(x => [x, 0.5*this[ch].k*x**2]);
+                },
+                setAx(s, labelX, domainX=[0, 10.0], labelY, domainY=[0, 0.2]){
+                    const ax = d3.select(s)
+                        .append("svg")
+                        .attr("width", this.width + this.margin.left + this.margin.right)
+                        .attr("height", this.height + this.margin.top + this.margin.bottom)
+                        .append("g")
+                        .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
+                    ax['x'] = d3.scaleLinear()
+                        .domain(domainX)
+                        .range([0, this.width]);
+                    ax.append("g")
+                        .attr("transform", "translate(0," + this.height + ")")
+                        .call(d3.axisBottom(ax.x));
+                    ax['y'] = d3.scaleLinear()
+                        .range([this.height, 0])
+                        .domain(domainY);
+                    ax.append("g").call(d3.axisLeft(ax.y));
+                    ax.append("text")
+                        .attr("class", "x label").attr("text-anchor", "end")
+                        .attr("x", this.width + 10).attr("y", this.height + 30)
+                        .text(labelX);
+                    ax.append("text")
+                        .attr("class", "y label").attr("text-anchor", "end")
+                        .attr("x", -35).attr("y", 20)
+                        .text(labelY);
+                    return ax;
+                },
+                initD3(){
+                    // Based on https://d3-graph-gallery.com/graph/density_slider.html
+                    this.n.sweepVds = d3.range(0, 10, 0.01);
+                    this.p.sweepVds = d3.range(-10, 0, 0.01);
+                    
+                    // N-MOS
+                    // Id-Vds (Output)
+                    this.svg.n.ax1 = this.setAx("#ax1", "Vds", [0, 10.0], "Id", [0, 0.15]); // FIXME: this.. = this... ???
+                    this.svg.n.ax1['pathIdVds'] = this.svg.n.ax1
+                        .append("g").append("path")
+                        .datum(this.getIdOut())
+                        .attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax1['pathBoundary'] = this.svg.n.ax1
+                        .append("g").append("path")
+                        .datum(this.n.sweepVds
+                            .map(x => [x, 0.5*this.n.k*x**2]))
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax1['pathVov'] = this.svg.n.ax1
+                        .append("g").append("path")
+                        .data([[[this.n.Vov, 0], [this.n.Vov, 0.2]]])
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax1['textVov'] = this.svg.n.ax1
+                        .append("text")
+                        .data([[this.n.Vov]])
+                        .attr("x", (d => this.svg.n.ax1.x(d)))
+                        .attr("y", this.height + 30)
+                        .text("Vov");
+
+                    this.n_circleQ = this.svg.n.ax1
+                        .append("g").append("circle")
+                        .attr("fill", "#f00").attr("stroke", "#000").attr("stroke-width", 1).attr("r", "5")
+                        .attr("cx", this.svg.n.ax1.x(0))
+                        .attr("cy", this.svg.n.ax1.y(0));
+
+                    // Id-Vgs (Transfer)
+                    this.svg.n.ax2 = this.setAx("#ax2", "Vgs", [0, 10.0], "Id", [0, 0.15]);
+                    this.svg.n.ax2['pathIdVgs'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .datum(this.getIdTx())
+                        .attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax2['pathBoundary'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .datum(this.n.sweepVds
+                            .filter(x => x > this.n.Vt)
+                            .map(x => [x, 0.5*this.n.k*(x - this.n.Vt)**2]))
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax2['pathVdsVt'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .data([[[this.n.Vds + this.n.Vt, 0], [this.n.Vds + this.n.Vt, 0.2]]])
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.n.ax2['textVdsVt'] = this.svg.n.ax2
+                        .append("text")
+                        .data([[this.n.Vds + this.n.Vt]])
+                        .attr("x", (d => this.svg.n.ax2.x(d)))
+                        .attr("y", this.height + 30)
+                        .text("Vds + Vt");
+
+                    // P-MOS
+                    this.svg.p.ax3 = this.setAx("#ax3", "Vds", [0, 10.0], "Id", [0, 0.2]);
+                    this.svg.p.ax3['pathIdVds'] = this.svg.p.ax3
+                        .append("g").append("path")
+                        .datum(this.getIdOut())
+                        .attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 2).attr("stroke-linejoin", "round")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.p.ax3['pathVov'] = this.svg.p.ax3
+                        .append("g").append("path")
+                        .data([[[this.p.Vov, 0], [this.p.Vov, 0.2]]])
+                        .attr("opacity", ".8")
+                        .attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.svg.p.ax3['textVov'] = this.svg.p.ax3
+                        .append("text")
+                        .data([[this.p.Vov]])
+                        .attr("x", (d => this.svg.p.ax3.x(d)))
+                        .attr("y", this.height + 30)
+                        .text("Vov")
+                    this.svg.p.ax3['circleQ'] = this.svg.p.ax3
+                        .append("g").append("circle")
+                        .attr("fill", "#f00")
+                        .attr("stroke", "#000").attr("stroke-width", 1)
+                        .attr("r", "5")
+                        .attr("cx", this.svg.p.ax3.x(0))
+                        .attr("cy", this.svg.p.ax3.y(0))
+                },
+                updateN(){
+                    this.n.Vgs = this.n.dVgs/10.0;
+                    //this.n_sVgs = math.format(this.n.Vgs, { notation: 'engineering' });
+                    this.n.Vds = this.n.dVds/10.0;
+                    this.n.Vov = this.n.Vgs - this.n.Vt;
+                    this.n.Id = this.getIdOut(this.n.Vds);
+                    this.svg.n.ax1.pathIdVds
+                        .datum(this.getIdOut())
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.n.ax1.pathVov
+                        .data([[[this.n.Vov, 0], [this.n.Vov, 0.2]]])
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax1.x(d[0]))
+                            .y(d => this.svg.n.ax1.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.n.ax1.textVov
+                        .data([[this.n.Vov]])
+                        .attr("x", (d => this.svg.n.ax1.x(d)))
+                    this.n_circleQ
+                        .data([[this.n.Vds, this.getIdOut(this.n.Vds)]])
+                        .transition().duration(100)
+                        .attr("cx", (d => this.svg.n.ax1.x(d[0])))
+                        .attr("cy", (d => this.svg.n.ax1.y(d[1])))
+                    this.svg.n.ax2.pathIdVgs
+                        .datum(this.getIdTx(this.n.Vds))
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.n.ax2.pathVdsVt
+                        .data([[[this.n.Vds + this.n.Vt, 0], [this.n.Vds + this.n.Vt, 0.2]]])
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.n.ax2.textVdsVt
+                        .data([[this.n.Vds + this.n.Vt]])
+                        .attr("x", (d => this.svg.n.ax2.x(d)))
+                },
+                updateP(){ /* TODO: reuse code */
+                    this.p.Vgs = -1.0*this.p.dVgs/10.0;
+                    this.p.Vds = -1.0*this.p.dVds/10.0;
+                    this.p.Vov = this.p.Vgs - this.p.Vt;
+                    this.p.Id = this.getIdOut(this.p.Vds, 'p');
+                    this.svg.p.ax3.pathIdVds
+                        .datum(this.getIdOut(null, 'p'))
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
+                            .curve(d3.curveBasis))
+                    const Vov = (this.modeP===true) ? -1.0*this.p.Vov : this.p.Vov;
+                    this.svg.p.ax3.pathVov
+                        .data([[[Vov, 0], [Vov, 0.2]]])
+                        .transition().duration(100)
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.p.ax3.x(d[0]))
+                            .y(d => this.svg.p.ax3.y(d[1]))
+                            .curve(d3.curveBasis))
+                    this.svg.p.ax3.textVov
+                        .data([[Vov]])
+                        .attr("x", (d => this.svg.p.ax3.x(d)))
+                    const Vds = (this.modeP===true) ? -1.0*this.p.Vds : this.p.Vds;
+                    this.svg.p.ax3.circleQ
+                        .data([[Vds, this.p.Id]])
+                        .transition().duration(100)
+                        .attr("cx", (d => this.svg.p.ax3.x(d[0])))
+                        .attr("cy", (d => this.svg.p.ax3.y(d[1])))
+                }
+            }, /* methods */
+            mounted() {
+                // Initial orientation check
+                this.updateOrientation();
+                // Listen to orientationchange and resize events
+                window.addEventListener("orientationchange", this.updateOrientation);
+                window.addEventListener("resize", this.updateOrientation);
+            },
+            beforeDestroy() {
+                // Clean up event listeners
+                window.removeEventListener("orientationchange", this.updateOrientation);
+                window.removeEventListener("resize", this.updateOrientation);
+            },
+        }); /* Vue.createApp */
+        const vm = app.mount('#app');
+
+        vm.initD3();
+
+        // TODO: wasm calculations
+        //function onWasmScriptLoad(){
+        //    console.log("Module is finally loaded");
+        //    vm.verifyChecksum = Module.cwrap('verifyChecksum', 'number', ['string']);
+        //}
+    </script>
+    <!--<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>-->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</body>
+</html>

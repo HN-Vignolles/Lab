@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.1.1/math.min.js"></script>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            select {
+                position: absolute;
+            }
+            .overlay {
+                position: absolute;
+            }
+            .flex {
+                display: flex;
+            }
+            label {
+                font-family: monospace;
+            }
+            body {
+                background-color: #acacac;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="Ebers-Moll-div"></div>
+        <div class="overlay" id="slider-div">
+            V_be <input type="range" name="slider-Vbe" id=slider-Vbe min="0" max="80" value="70">
+            V_bc <input type="range" name="slider-Vbc" id=slider-Vbc min="-100" max="80" value="-100">
+        </div>
+        <div class="overlay" id="str-Vbc-div"></div><div class="overlay" id="str-Vbe-div"></div>
+        <div class="overlay" id="str-Idc-div"></div><div class="overlay" id="str-Ide-div"></div>
+        <div class="overlay" id="str-alphaIdc-div"></div><div class="overlay" id="str-alphaIde-div"></div>
+        <div class="overlay" id="str-Ic-div"></div>
+        <div class="overlay" id="str-Ie-div"></div>
+        <div class="overlay" id="str-Ib-div"></div>
+        <div class="overlay" id="latex-Idc-div">\( i_{DC} \)</div>
+        <div class="overlay" id="latex-Ide-div">\( i_{DE} \)</div>
+        <div class="overlay" id="latex-alphaIdc-div">\( \alpha_Ri_{DC} \)</div>
+        <div class="overlay" id="latex-alphaIde-div">\( \alpha_Fi_{DE} \)</div>
+        <div class="overlay" id="latex-Ic-div">\( i_C = \alpha_Fi_{DE} - i_{DC} \)</div>
+        <div class="overlay" id="latex-Ie-div">\( i_E = i_{DE} - \alpha_Ri_{DC} \)</div>
+        <div class="overlay" id="latex-Ib-div">\(
+            \begin{array}{rl} i_B &= (1-\alpha_F)i_{DE} \\
+            \; &+ (1-\alpha_R)i_{DC} \end{array} \)
+        </div>
+        <div class="overlay" id="fig" style="width: 600px;"></div>
+        <script>
+            let X = [];
+            let Y = [];
+            let initData = [ { line: { "color": "blue" },x: X, y: Y, type: "scatter" } ];
+            const layout = { xaxis: { title:"Vce" }, yaxis: { title:"Ic", range:[0,1] } }
+            Plotly.newPlot('fig', initData, layout);
+            let XY = {};
+
+            const vth = 0.025;  // FIXME
+            const betaF = 400.0, betaR = 2.0;
+            const I_S = 10e-15;
+            const alphaF = betaF/(betaF+1.0), alphaR = betaR/(betaR+1.0);
+            const I_SE = I_S/alphaF; //.1e-15;
+            const I_SC = I_S/alphaR; //20e-15;
+
+            d3.xml("./assets/Ebers-Moll.svg").then(data => {
+                d3.select('#Ebers-Moll-div').node().append(data.documentElement);
+                const svg = d3.select("#Ebers-Moll-div").select("svg");
+                
+                const textVbe = svg.select("#text-Vbe");
+                textVbe.attr("xml:space", "preserve")
+                    .attr("style", "font-size:13.2292px;font-family:monospace;-inkscape-font-specification:Arial;fill:#000000;stroke:none;stroke-width:0.264583")
+                    .attr("x", "50")
+                    .text(`beta = ${betaF}`);
+
+                const arrowIdc = svg.select("#arrow-Idc");
+                const arrowIde = svg.select("#arrow-Ide");
+                const arrowAlphaIdc = svg.select("#arrow-alphaIdc");
+                const arrowAlphaIde = svg.select("#arrow-alphaIde");
+                
+                let vbc = -1.0;
+                let vbe = 0.7;
+
+                const sliderDiv = setDiv("#slider-div", "#rect-sVbe");
+                const vbcDiv = setDiv("#str-Vbc-div", "#rect-str-Vbc", "Vbc = ");
+                const vbeDiv = setDiv("#str-Vbe-div", "#rect-str-Vbe", "Vbe = ");
+                const idcDiv = setDiv("#str-Idc-div", "#rect-str-Idc", "= ");
+                const ideDiv = setDiv("#str-Ide-div", "#rect-str-Ide", "= ");
+                const alphaIdcDiv = setDiv("#str-alphaIdc-div", "#rect-str-alphaIdc", "= ");
+                const alphaIdeDiv = setDiv("#str-alphaIde-div", "#rect-str-alphaIde", "= ");
+                const icDiv = setDiv("#str-Ic-div", "#rect-str-Ic", "= ");
+                const ieDiv = setDiv("#str-Ie-div", "#rect-str-Ie", "= ");
+                const ibDiv = setDiv("#str-Ib-div", "#rect-str-Ib", "= ");
+
+                setDiv("#latex-Idc-div", "#rect-latex-Idc");
+                setDiv("#latex-Ide-div", "#rect-latex-Ide");
+                setDiv("#latex-alphaIdc-div", "#rect-latex-alphaIdc");
+                setDiv("#latex-alphaIde-div", "#rect-latex-alphaIde");
+                setDiv("#latex-Ic-div", "#rect-latex-Ic");
+                setDiv("#latex-Ie-div", "#rect-latex-Ie");
+                setDiv("#latex-Ib-div", "#rect-latex-Ib");
+                
+                setDiv("#fig", "#rect-plot-output");
+                
+                sliderDiv.select("#slider-Vbe")
+                    .on("change", function(d){
+                        XY = {};
+                        vbe = this.value/100;
+                        updateG();
+                    })
+                    .on("touchmove", function(d){
+                        XY = {};
+                        vbe = this.value/100;
+                        updateG();
+                    });
+                sliderDiv.select("#slider-Vbc")
+                    .on("change", function(d){
+                        vbc = this.value/100;
+                        updateG();
+                    })
+                    .on("touchmove", function(d){
+                        vbc = this.value/100;
+                        updateG();
+                    })
+                
+                function setDiv(htmlSel, svgSel, text="") {
+                    let box = svg.select(svgSel);
+                    box.attr("style", "stroke: none; fill: none");
+                    return d3.select(htmlSel).style("left", `${box.attr("x")}px`).style("top", `${box.attr("y")}px`)
+                }
+
+                function updateG() {
+                    const {i_DE, i_DC} = getI(vbe, vbc);
+                    let i_C = alphaF*i_DE - i_DC;
+                    let vce = -1.0*vbc + vbe;
+                    vbeDiv.text(`Vbe = ${vbe}`);
+                    vbcDiv.text(`Vbc = ${vbc}`);
+                    ideDiv.text(`= ${math.format(i_DE, {precision:3, notation:'engineering'})}`);
+                    idcDiv.text(`= ${math.format(i_DC, {precision:3, notation:'engineering'})}`);
+                    alphaIdeDiv.text(`= ${math.format(alphaF*i_DE, {precision:3, notation:'engineering'})}`);
+                    alphaIdcDiv.text(`= ${math.format(alphaR*i_DC, {precision:3, notation:'engineering'})}`);
+                    icDiv.text(`= ${math.format(i_C, {precision:3, notation:'engineering'})}`);
+                    ieDiv.text(`= ${math.format(i_DE - alphaR*i_DC, {precision:3, notation:'engineering'})}`);
+                    ibDiv.text(`= ${math.format((1-alphaF)*i_DE+(1-alphaR)*i_DC, {precision:3, notation:'engineering'})}`);
+
+                    XY[vce] = i_C;
+                    X = Object.keys(XY).map(Number);
+                    Y = Object.values(XY);
+                    Plotly.newPlot('fig', [{ x: X, y: Y, mode:'markers' }], layout);
+
+                    let scale = scaleI(i_DE);
+                    arrowIde.transition().attr("transform", `
+                        translate(${Number(arrowIde.attr("data-cx"))*-1.0*(scale-1)} ${Number(arrowIde.attr("data-cy"))*-1.0*(scale-1)})
+                        scale(${scale})`);
+                    scale = scaleI(i_DC);
+                    arrowIdc.transition().attr("transform", `
+                        translate(${Number(arrowIdc.attr("data-cx"))*-1.0*(scale-1)} ${Number(arrowIdc.attr("data-cy"))*-1.0*(scale-1)})
+                        scale(${scale})`);
+                    scale = scaleI(alphaR*i_DC);
+                    arrowAlphaIdc.transition().attr("transform", `
+                        translate(${Number(arrowAlphaIdc.attr("data-cx"))*-1.0*(scale-1)} ${Number(arrowAlphaIdc.attr("data-cy"))*-1.0*(scale-1)})
+                        scale(${scale})`);
+                    scale = scaleI(alphaF*i_DE);
+                    arrowAlphaIde.transition().attr("transform", `
+                        translate(${Number(arrowAlphaIde.attr("data-cx"))*-1.0*(scale-1)} ${Number(arrowAlphaIde.attr("data-cy"))*-1.0*(scale-1)})
+                        scale(${scale})`);
+                }
+
+                function getI(vbe, vbc) {
+                    return { i_DE: I_SE*(Math.exp(vbe/vth)-1), i_DC: I_SC*(Math.exp(vbc/vth)-1.0), vbe: vbe }
+                }
+
+                function scaleTo(m, rMin, rMax, tMin, tMax) {
+                    return (m-rMin)/(rMax-rMin)*(tMax-tMin)+tMin;
+                }
+                function scaleI(m) {
+                    if (m > 0) m = Math.min(m*0.5, 2);
+                    if (m < 0) m = m*2.0e13;
+                    return m;
+                }
+                
+                /*document.addEventListener('readystatechange', event => {
+                    if(event.target.readyState == 'complete'){
+                        let dateParam = { secs: date.getTime() };
+                        fetch("/date", { method: 'POST', body: JSON.stringify(dateParam)})
+                            .then(res => res.json())
+                            .then(res => { console.table(res); })
+                    }
+                });*/
+            });
+            
+            // https://stackoverflow.com/questions/38224875/how-can-d3-transform-be-used-in-d3-v4
+            // altocumulus and Mehdi
+            function getTransformation(transform) {
+                // Create a dummy g for calculation purposes only. This will never
+                // be appended to the DOM and will be discarded once this function 
+                // returns.
+                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  
+                // Set the transform attribute to the provided string value.
+                g.setAttributeNS(null, "transform", transform);
+  
+                // consolidate the SVGTransformList containing all transformations
+                // to a single SVGTransform of type SVG_TRANSFORM_MATRIX and get
+                // its SVGMatrix. 
+                var matrix = g.transform.baseVal.consolidate().matrix;
+  
+                // Below calculations are taken and adapted from the private function
+                // transform/decompose.js of D3's module d3-interpolate.
+                var {a, b, c, d, e, f} = matrix;   // ES6, if this doesn't work, use below assignment
+                // var a=matrix.a, b=matrix.b, c=matrix.c, d=matrix.d, e=matrix.e, f=matrix.f; // ES5
+                var scaleX, scaleY, skewX;
+                if (scaleX = Math.sqrt(a * a + b * b)) a /= scaleX, b /= scaleX;
+                if (skewX = a * c + b * d) c -= a * skewX, d -= b * skewX;
+                if (scaleY = Math.sqrt(c * c + d * d)) c /= scaleY, d /= scaleY, skewX /= scaleY;
+                if (a * d < b * c) a = -a, b = -b, skewX = -skewX, scaleX = -scaleX;
+                return {
+                    translateX: e,
+                    translateY: f,
+                    rotate: Math.atan2(b, a) * 180 / Math.PI,
+                    skewX: Math.atan(skewX) * 180 / Math.PI,
+                    scaleX: scaleX,
+                    scaleY: scaleY
+                };
+            }
+        </script>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>
