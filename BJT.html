@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>BJT Load Line Explorer</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+    <!-- ChatGPT + HNV -->
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        .controls {
+            margin-bottom: 10px;
+        }
+        label {
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>BJT Output Characteristics & Load Line</h2>
+        <div class="controls">
+            <label>Vcc <input type="range" min="2" max="10" step="0.1" v-model.number="Vcc"> {{ Vcc.toFixed(1) }} V </label>
+            <label>Vbe <input type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe"> {{ Vbe.toFixed(3) }} V </label>
+            <label>Vce <input type="range" min="0" max="3" step="0.1" v-model.number="Vce" :disabled="autoVce"> {{ Vce.toFixed(2) }} V </label>
+            <label>Rc  <input type="range" min="10" max="1000" step="10" v-model.number="Rc"> {{ Rc }} Ω
+            <label><input type="checkbox" v-model="autoVce">Vce from load-line intersection</label>
+        </div>
+    </div>
+    <div id="plot" style="width:100%;height:500px;"></div>
+</div>
+
+<script>
+const { createApp, watch } = Vue;
+const vth = 0.025;
+const Va = 20;
+const n = 1.2;
+const I_S = 5e-12;
+const betaF = 100;
+const betaR = 2;
+const I_S_BE = I_S / betaF;
+const I_S_BC = I_S / betaR;
+
+function calcIc(Vbe, Vbc) {
+    return I_S*(Math.exp(Vbe/(n*vth))*(1+(Vbe-Vbc)/Va)-Math.exp(Vbc/(n*vth))) - I_S_BC*(Math.exp(Vbc/(n*vth))-1);
+}
+
+function calcIb(Vbe, Vbc) {
+    return I_S_BE*(Math.exp(Vbe/(n*vth))-1) + I_S_BC*(Math.exp(Vbc/(n*vth))-1);
+}
+
+function linspace(a, b, n) {
+    return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+}
+
+createApp({
+    data() {
+        return {
+            Vbe: 0.71,
+            Vce: 0.5,
+            Vcc: 4,
+            Rc: 30,
+            linVbe: linspace(-1.2, 1.2, 200),
+            linVbc: linspace(-4, 1.2, 200),
+            gridVce: linspace(0, 4, 200),
+            gridVbe: linspace(0, 1, 200),
+            autoVce: false,
+        };
+    },
+    mounted() {
+        this.updatePlot();
+    },
+    watch: {
+        Vbe: 'updatePlot',
+        Vce: 'updatePlot',
+        Vcc: 'updatePlot',
+        Rc:  'updatePlot'
+    },
+    methods: {
+        findLoadLineIntersection() {
+            const Vbe = this.Vbe;
+            const Vcc = this.Vcc;
+            const Rc  = this.Rc;
+            const VceMin = 0;
+            const VceMax = 4;
+            const steps = 400;
+            let prevF = null;
+            let prevV = null;
+            for (let i = 0; i <= steps; i++) {
+                const Vce = VceMin + (VceMax - VceMin) * i / steps;
+                const Vbc = -Vce + Vbe;
+                const Ic_curve = calcIc(Vbe, Vbc);
+                const Ic_load  = (Vcc - Vce) / Rc;
+                const f = Ic_curve - Ic_load;
+                if (prevF !== null && f * prevF < 0) {
+                    // Linear interpolation
+                    const t = prevF / (prevF - f);
+                    return prevV + t * (Vce - prevV);
+                }
+                prevF = f;
+                prevV = Vce;
+            }
+            return this.Vce; // fallback (no intersection)
+        },
+        updatePlot() {
+            if (this.autoVce) {
+                this.Vce = this.findLoadLineIntersection();
+            }
+            const Vbc = -this.Vce + this.Vbe;
+            const Ib = calcIb(this.Vbe, Vbc);
+            const Ic = calcIc(this.Vbe, Vbc);
+            const traces = [
+                {   // 221
+                    x: this.linVbe.map(v => -calcIb(v, Vbc)),
+                    y: this.linVbe.map(v => calcIc(v, Vbc)),
+                    xaxis: 'x1',
+                    yaxis: 'y1',
+                    mode: 'lines',
+                    name: '-Ib vs Ic'
+                },
+                {
+                    x: [-Ib, -Ib], y: [0, 3], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {
+                    x: [-30e-3, 0], y: [Ic, Ic], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {   // 222
+                    x: this.linVbc.map(v => -v + this.Vbe),
+                    y: this.linVbc.map(v => calcIc(this.Vbe, v)),
+                    xaxis: 'x2',
+                    yaxis: 'y2',
+                    mode: 'lines',
+                    name: 'Ic(Vce)'
+                },
+                {
+                    x: [this.Vce, this.Vce], y: [0, 0.2], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {
+                    x: [0, 4], y: [Ic, Ic], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {
+                    x: [0, this.Vcc], y: [this.Vcc / this.Rc, 0], xaxis: 'x2', yaxis: 'y2', mode: 'lines', name: 'Load line'
+                },
+                {   // 223
+                    x: this.linVbe.map(v => -calcIb(v, Vbc)),
+                    y: this.linVbe.map(v => -v),
+                    xaxis: 'x3',
+                    yaxis: 'y3',
+                    mode: 'lines',
+                    name: '-Ib vs -Vbe'
+                },
+                                {
+                    x: [-Ib, -Ib], y: [0, -1], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {
+                    x: [-30e-3, 0], y: [-this.Vbe, -this.Vbe], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {   // 224
+                    z: this.gridVbe.map(Vbe =>
+                        this.gridVce.map(Vce =>
+                        calcIb(Vbe, -Vce + Vbe)
+                        )
+                    ),
+                    x: this.gridVce,
+                    y: this.gridVbe.map(v => -v),
+                        type: 'contour',
+                        contours: {
+                            coloring: 'lines',
+                            start: Ib,
+                            end: Ib,
+                            size: 1e-12
+                        },
+                    xaxis: 'x4',
+                    yaxis: 'y4',
+                    showscale: false
+                },
+                {
+                    x: [this.Vce, this.Vce], y: [0, -1], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+                {
+                    x: [0, 4], y: [-this.Vbe, -this.Vbe], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                },
+            ];
+            const layout = {
+                grid: { rows: 2, columns: 2, pattern: 'independent' },
+                xaxis:  { title: '-Ib', range: [-2e-3, 0] },
+                yaxis:  { title: 'Ic', range: [0, 0.2] },
+                xaxis2: { title: 'Vce', range: [0, 4] },
+                yaxis2: { title: 'Ic', range: [0, 0.2] },
+                xaxis3: { title: '-I_B (A)', range: [-2e-3, 0] },
+                yaxis3: { title: '-V_BE (V)', range: [-1, 0] },
+                xaxis4: { title: 'Vce', range: [0, 4] },
+                yaxis4: { title: '-Vbe', range: [-1, 0] },
+                margin: { t: 30 }
+            };
+            Plotly.react('plot', traces, layout);
+        }
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
