@@ -3,7 +3,7 @@
     <head>
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.1.1/math.min.js"></script>
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="https://cdn.plot.ly/plotly-3.4.0.min.js"></script>
         <style>
             select {
                 position: absolute;
@@ -28,7 +28,7 @@
             V_be <input type="range" name="slider-Vbe" id=slider-Vbe min="0" max="80" value="70">
             V_bc <input type="range" name="slider-Vbc" id=slider-Vbc min="-100" max="80" value="-100">
         </div>
-        <div class="overlay" id="str-Vbc-div"></div><div class="overlay" id="str-Vbe-div"></div>
+        <div class="overlay" id="str-Vce-div"></div><div class="overlay" id="str-Vbc-div"></div><div class="overlay" id="str-Vbe-div"></div>
         <div class="overlay" id="str-Idc-div"></div><div class="overlay" id="str-Ide-div"></div>
         <div class="overlay" id="str-alphaIdc-div"></div><div class="overlay" id="str-alphaIde-div"></div>
         <div class="overlay" id="str-Ic-div"></div>
@@ -68,7 +68,8 @@
                 textVbe.attr("xml:space", "preserve")
                     .attr("style", "font-size:13.2292px;font-family:monospace;-inkscape-font-specification:Arial;fill:#000000;stroke:none;stroke-width:0.264583")
                     .attr("x", "50")
-                    .text(`beta = ${betaF}`);
+                    .text(`beta_F = ${betaF}, alpha_F = ${math.format(alphaF, {precision:3, notation:'engineering'})}, `
+                        + `beta_R = ${betaR}, alpha_R = ${math.format(alphaR, {precision:3, notation:'engineering'})}`);
 
                 const arrowIdc = svg.select("#arrow-Idc");
                 const arrowIde = svg.select("#arrow-Ide");
@@ -81,6 +82,7 @@
                 const sliderDiv = setDiv("#slider-div", "#rect-sVbe");
                 const vbcDiv = setDiv("#str-Vbc-div", "#rect-str-Vbc", "Vbc = ");
                 const vbeDiv = setDiv("#str-Vbe-div", "#rect-str-Vbe", "Vbe = ");
+                const vceDiv = setDiv("#str-Vce-div", "#rect-str-Vce", "Vce = ");
                 const idcDiv = setDiv("#str-Idc-div", "#rect-str-Idc", "= ");
                 const ideDiv = setDiv("#str-Ide-div", "#rect-str-Ide", "= ");
                 const alphaIdcDiv = setDiv("#str-alphaIdc-div", "#rect-str-alphaIdc", "= ");
@@ -123,7 +125,10 @@
                 function setDiv(htmlSel, svgSel, text="") {
                     let box = svg.select(svgSel);
                     box.attr("style", "stroke: none; fill: none");
-                    return d3.select(htmlSel).style("left", `${box.attr("x")}px`).style("top", `${box.attr("y")}px`)
+                    let s = d3.select(htmlSel).style("left", `${box.attr("x")}px`).style("top", `${box.attr("y")}px`)
+                    if (text !== "")
+                        s.text(text);
+                    return s;
                 }
 
                 function updateG() {
@@ -132,6 +137,7 @@
                     let vce = -1.0*vbc + vbe;
                     vbeDiv.text(`Vbe = ${vbe}`);
                     vbcDiv.text(`Vbc = ${vbc}`);
+                    vceDiv.text(`Vce = ${math.format(vce, {precision:2})}`);
                     ideDiv.text(`= ${math.format(i_DE, {precision:3, notation:'engineering'})}`);
                     idcDiv.text(`= ${math.format(i_DC, {precision:3, notation:'engineering'})}`);
                     alphaIdeDiv.text(`= ${math.format(alphaF*i_DE, {precision:3, notation:'engineering'})}`);
@@ -221,7 +227,7 @@
                 };
             }
         </script>
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js"></script>
         <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     </body>
 </html>
