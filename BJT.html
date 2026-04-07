@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>BJT Load Line Explorer</title>
+    <title>BJT</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
     <!-- ChatGPT + HNV -->
@@ -21,7 +21,7 @@
 </head>
 <body>
     <div id="app">
-        <h2>BJT Output Characteristics & Load Line</h2>
+        <h2>BJT Output Characteristics & Load Line (cf. Vierquadrantenkennlinienfeld)</h2>
         <div class="controls">
             <label>Vcc <input type="range" min="2" max="10" step="0.1" v-model.number="Vcc"> {{ Vcc.toFixed(1) }} V </label>
             <label>Vbe <input type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe"> {{ Vbe.toFixed(3) }} V </label>
