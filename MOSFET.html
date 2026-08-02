@@ -135,7 +135,7 @@
                     p_pathIdVds: {}, // D3 trace (plot): Id vs Vds
                     p_pathVov: {},
                     n_textVov: {}, p_textVov: {},
-                    n_circleQ: {}, p_circleQ: {},
+                    n_circleQ: {}, n_circleG: {}, p_circleQ: {},
                     margin: { top: 30, right: 30, bottom: 30, left: 50 },
                     width: Math.min(window.outerWidth*0.8, 700) - margin.left - margin.right,
                     height: 350 - margin.top - margin.bottom,
@@ -304,6 +304,21 @@
                         .attr("x", (d => this.svg.n.ax2.x(d)))
                         .attr("y", this.height + 30)
                         .text("Vds + Vt");
+                    this.svg.n.ax2['pathVt'] = this.svg.n.ax2
+                        .append("g").append("path")
+                        .data([[[this.n.Vt, 0], [this.n.Vt, 0.2]]])
+                        .attr("opacity", ".8").attr("fill", "none")
+                        .attr("stroke", "#000").attr("stroke-width", 1).attr("stroke-linejoin", "round")
+                        .attr("stroke-dasharray", "0 4 0")
+                        .attr("d",  d3.line()
+                            .x(d => this.svg.n.ax2.x(d[0]))
+                            .y(d => this.svg.n.ax2.y(d[1]))
+                            .curve(d3.curveBasis));
+                    this.n_circleG = this.svg.n.ax2
+                        .append("g").append("circle")
+                        .attr("fill", "#0f0").attr("stroke", "#000").attr("stroke-width", 1).attr("r", "5")
+                        .attr("cx", this.svg.n.ax2.x(0))
+                        .attr("cy", this.svg.n.ax2.y(0));
 
                     // P-MOS
                     this.svg.p.ax3 = this.setAx("#ax3", "Vds", [0, 10.0], "Id", [0, 0.2]);
@@ -369,6 +384,11 @@
                         .transition().duration(100)
                         .attr("cx", (d => this.svg.n.ax1.x(d[0])))
                         .attr("cy", (d => this.svg.n.ax1.y(d[1])))
+                    this.n_circleG
+                        .data([[this.n.Vgs, this.getIdOut(this.n.Vds)]])
+                        .transition().duration(100)
+                        .attr("cx", (d => this.svg.n.ax2.x(d[0])))
+                        .attr("cy", (d => this.svg.n.ax2.y(d[1])))
                     this.svg.n.ax2.pathIdVgs
                         .datum(this.getIdTx(this.n.Vds))
                         .transition().duration(100)
