@@ -309,15 +309,15 @@
                                         <output for="vbc">{{ semilog.vbc.toFixed(2) }} V</output>
                                     </div>
                                     <input id="vbc" type="range" min="-1" max="0.7" step="0.01" v-model.number="semilog.vbc" :style="rangeFill(semilog.vbc, -1, 0.7)" :aria-valuetext="semilog.vbc.toFixed(2) + ' volts'">
-                                    <div class="range-labels" aria-hidden="true"><span>−1 V</span><span>0.7 V</span></div>
+                                    <div class="range-labels" aria-hidden="true"><span>-1 V</span><span>0.7 V</span></div>
                                 </div>
                                 <div class="control">
                                     <div class="control-top">
-                                        <label for="semilog-vbe">Track base–emitter <span class="symbol">V<sub>BE</sub></span></label>
+                                        <label for="semilog-vbe">Track base-emitter <span class="symbol">V<sub>BE</sub></span></label>
                                         <output for="semilog-vbe">{{ semilog.vbe.toFixed(3) }} V</output>
                                     </div>
                                     <input id="semilog-vbe" type="range" min="-0.2" max="0.7" step="0.001" v-model.number="semilog.vbe" :style="rangeFill(semilog.vbe, -0.2, 0.7)" :aria-valuetext="semilog.vbe.toFixed(3) + ' volts'" aria-describedby="semilog-operating-point">
-                                    <div class="range-labels" aria-hidden="true"><span>−0.2 V</span><span>0.7 V</span></div>
+                                    <div class="range-labels" aria-hidden="true"><span>-0.2 V</span><span>0.7 V</span></div>
                                 </div>
                             </div>
                             <div class="model-summary">
@@ -331,8 +331,8 @@
                                         <span class="region-badge" :data-region="semilogOperatingPoint.region">{{ semilogOperatingPoint.label }}</span>
                                     </div>
                                     <p class="voltage-equation">
-                                        <span>V<sub>CE</sub> = V<sub>BE</sub> − V<sub>BC</sub></span>
-                                        <span>= {{ semilog.vbe.toFixed(3) }} V − ({{ semilog.vbc.toFixed(2) }} V) = <strong>{{ semilogOperatingPoint.vce.toFixed(3) }} V</strong></span>
+                                        <span>V<sub>CE</sub> = V<sub>BE</sub> - V<sub>BC</sub></span>
+                                        <span>= {{ semilog.vbe.toFixed(3) }} V - ({{ semilog.vbc.toFixed(2) }} V) = <strong>{{ semilogOperatingPoint.vce.toFixed(3) }} V</strong></span>
                                     </p>
                                     <p class="bias-note">V<sub>BE</sub> {{ semilog.vbe > 0 ? '>' : '≤' }} 0 V · V<sub>BC</sub> {{ semilog.vbc > 0 ? '>' : '≤' }} 0 V. Ideal junction-bias regions; zero bias is included with the non-forward-biased side.</p>
                                 </div>
@@ -442,7 +442,7 @@ createApp({
         },
         semilogOperatingPoint() {
             const { vbe, vbc } = this.semilog;
-            // Ideal NPN regions follow the signs of the B–E and B–C biases.
+            // Ideal NPN regions follow the signs of the B-E and B-C biases.
             const [region, label] = vbe > 0
                 ? (vbc > 0 ? ['saturation', 'Saturation'] : ['forward-active', 'Forward-active'])
                 : (vbc > 0 ? ['reverse-active', 'Reverse-active'] : ['cutoff', 'Cutoff']);
