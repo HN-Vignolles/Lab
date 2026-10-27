@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f5f6f3" />
-    <title>BJT · Transistor Lab</title>
+    <title>BJT characteristics</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
     <!-- ChatGPT + HNV -->
@@ -39,22 +39,16 @@
         sub { font-size: .7em; }
         [v-cloak] { display: none; }
         .shell { max-width: 1600px; padding: 0 40px; margin: 0 auto; }
-        .topbar { border-bottom: 1px solid var(--line); }
-        .topbar-inner { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-        .brand { display: flex; align-items: center; gap: 11px; font-weight: 650; letter-spacing: -.3px; font-size: 16px; }
-        .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: var(--accent); border-radius: 9px; }
-        .topbar-note { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 8px; }
-        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex-shrink: 0; }
-        main.shell { padding-top: 34px; padding-bottom: 26px; }
-        .intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 28px; }
-        .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: 1.7px; text-transform: uppercase; }
+        .page-header { padding-top: 34px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
         h1 { margin: 0; font-size: clamp(28px, 3vw, 38px); line-height: 1.2; font-weight: 650; letter-spacing: -1.3px; }
-        .intro-copy { color: var(--muted); margin: 10px 0 0; }
-        .device-tag { border: 1px solid var(--line); border-radius: 6px; padding: 7px 11px; font: 11px var(--mono); white-space: nowrap; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex-shrink: 0; }
+        main.shell { padding-top: 30px; padding-bottom: 40px; }
+        .topic + .topic { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--line); }
+        .topic-title { margin: 0 0 24px; font-size: clamp(19px, 2vw, 24px); line-height: 1.35; font-weight: 600; letter-spacing: -.5px; overflow-wrap: anywhere; }
         .workspace { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
         .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #243d2b03; }
         .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
-        h2 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -.2px; }
+        h3 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -.2px; }
         .reset { border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; gap: 5px; padding: 4px 0 4px 6px; font-size: 11px; }
         .reset:hover { color: var(--accent); }
         .controls { padding: 0 22px; }
@@ -96,15 +90,17 @@
         .plot-subtitle { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
         .mode-badge { display: flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 5px 8px; font: 10px var(--mono); white-space: nowrap; }
         .plot-scroll { overflow-x: auto; }
-        #plot { width: 100%; min-width: 570px; height: 540px; }
+        #plot, #semilog-plot { width: 100%; min-width: 570px; height: 540px; }
         .plot-caption { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--line); margin: 0; padding: 13px 22px; font-size: 10px; color: var(--muted); }
         .guide-key { display: flex; align-items: center; gap: 8px; }
         .guide-key::before { content: ""; display: block; width: 18px; border-top: 1px dashed #8c9690; }
         .hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 0 3px; color: var(--muted); font-size: 11px; }
         .hint svg { flex-shrink: 0; margin-top: 1px; }
         .hint p { margin: 0; line-height: 1.7; }
-        .footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 30px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-        .footer span:last-child { font-family: var(--mono); }
+        #semilog-plot { height: 590px; }
+        .model-constants { margin: 0; padding: 16px 22px; border-top: 1px solid var(--line); background: #fafbf9; border-radius: 0 0 12px 12px; }
+        .model-constants div { display: flex; justify-content: space-between; gap: 16px; padding: 4px 0; font-size: 11px; color: var(--muted); }
+        .model-constants dd { margin: 0; font-family: var(--mono); }
         noscript { display: block; padding: 32px; }
         @media (min-width: 1500px) { #plot { height: 590px; } }
         @media (max-width: 1100px) {
@@ -118,6 +114,7 @@
         }
         @media (max-width: 900px) {
             .workspace { grid-template-columns: 1fr; }
+            .semilog-controls .control:last-child { grid-column: 1 / -1; }
             .controls { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
             .control:nth-child(3) { border-bottom: 0; }
             .auto-control p { max-width: none; }
@@ -130,13 +127,10 @@
         }
         @media (max-width: 540px) {
             .shell { padding-left: 18px; padding-right: 18px; }
-            .topbar-inner { min-height: 64px; }
-            .topbar-note { font-size: 10px; }
-            .brand { font-size: 14px; }
-            main.shell { padding-top: 26px; }
-            .intro { margin-bottom: 22px; }
-            .intro-copy { font-size: 12px; max-width: 290px; }
-            .device-tag { display: none; }
+            .page-header { padding-top: 26px; padding-bottom: 22px; }
+            main.shell { padding-top: 24px; }
+            .topic-title { margin-bottom: 18px; }
+            .topic + .topic { margin-top: 32px; padding-top: 24px; }
             .controls { padding: 0 18px; column-gap: 20px; }
             .control { padding: 18px 0; }
             .control-top { flex-wrap: wrap; gap: 8px; }
@@ -149,129 +143,189 @@
             .readout-value { font-size: 21px; letter-spacing: -.8px; }
             .readout-value span { display: block; font-size: 10px; margin: 5px 0 0; }
             .plot-heading { align-items: flex-start; gap: 8px; }
-            .plot-heading h2 { font-size: 12px; }
+            .plot-heading h3 { font-size: 12px; }
             .plot-subtitle { font-size: 10px; }
             .mode-badge { font-size: 9px; }
             .plot-caption { flex-wrap: wrap; padding-left: 18px; padding-right: 18px; }
-            .footer { flex-wrap: wrap; gap: 4px; }
         }
         @media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; } }
     </style>
 </head>
 <body>
     <div id="app" v-cloak>
-        <header class="topbar">
-            <!-- TODO class {shell, topbar-inner, brand, topbar-note} -->
+        <header class="shell page-header">
+            <h1>BJT characteristics</h1>
         </header>
         <main class="shell">
-            <div class="intro">
-                <div>
-                    <!-- <p class="eyebrow">Device explorer / 01</p> -->
-                    <h1>BJT characteristics</h1>
-                    <p class="intro-copy">Vierquadrantenkennlinienfeld and load line.</p>
+            <section class="topic" aria-labelledby="four-quadrant-title">
+                <h2 class="topic-title" id="four-quadrant-title">Vierquadrantenkennlinienfeld and load line.</h2>
+                <div class="workspace">
+                    <aside aria-label="Simulation settings">
+                        <section class="panel" aria-labelledby="controls-title">
+                            <div class="panel-heading">
+                                <h3 id="controls-title">Circuit parameters</h3>
+                                <button class="reset" type="button" @click="resetParameters" title="Reset all parameters to their starting values">
+                                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6a6 6 0 1 1 0 4M2 2v4h4" /></svg>
+                                    Reset
+                                </button>
+                            </div>
+                            <div class="controls">
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="vcc">Supply <span class="symbol">V<sub>CC</sub></span></label>
+                                        <output for="vcc">{{ Vcc.toFixed(1) }} V</output>
+                                    </div>
+                                    <input id="vcc" type="range" min="2" max="10" step="0.1" v-model.number="Vcc" :style="rangeFill(Vcc, 2, 10)" :aria-valuetext="Vcc.toFixed(1) + ' volts'">
+                                    <div class="range-labels" aria-hidden="true"><span>2 V</span><span>10 V</span></div>
+                                </div>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="vbe">Base-emitter <span class="symbol">V<sub>BE</sub></span></label>
+                                        <output for="vbe">{{ Vbe.toFixed(3) }} V</output>
+                                    </div>
+                                    <input id="vbe" type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe" :style="rangeFill(Vbe, 0, 0.75)" :aria-valuetext="Vbe.toFixed(5) + ' volts'">
+                                    <div class="range-labels" aria-hidden="true"><span>0 V</span><span>0.75 V</span></div>
+                                </div>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="vce">Collector-emitter <span class="symbol">V<sub>CE</sub></span></label>
+                                        <output for="vce">{{ Vce.toFixed(2) }} V</output>
+                                    </div>
+                                    <input id="vce" type="range" min="0" max="3" step="0.1" v-model.number="Vce" :disabled="autoVce" :style="rangeFill(Vce, 0, 3)" :aria-valuetext="Vce.toFixed(2) + ' volts'" aria-describedby="auto-description">
+                                    <div class="range-labels" aria-hidden="true"><span>0 V</span><span>3 V</span></div>
+                                </div>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="rc">Collector resistor <span class="symbol">R<sub>C</sub></span></label>
+                                        <output for="rc">{{ Rc }} Ω</output>
+                                    </div>
+                                    <input id="rc" type="range" min="10" max="1000" step="10" v-model.number="Rc" :style="rangeFill(Rc, 10, 1000)" :aria-valuetext="Rc + ' ohms'">
+                                    <div class="range-labels" aria-hidden="true"><span>10 Ω</span><span>1 kΩ</span></div>
+                                </div>
+                            </div>
+                            <div class="auto-control">
+                                <label class="switch-label" for="auto-vce">
+                                    Auto operating point
+                                    <input id="auto-vce" type="checkbox" role="switch" v-model="autoVce" aria-describedby="auto-description">
+                                </label>
+                                <p id="auto-description">Set V<sub>CE</sub> from the load-line intersection within the plotted range.</p>
+                            </div>
+                        </section>
+                        <details class="model-note">
+                            <summary>About this model</summary>
+                            <p>An Ebers-Moll model with Early effect. Adjust the bias to see how all four characteristic plots relate to the same operating point.</p>
+                            <div class="model-params"><span>β<sub>F</sub> = 300</span><span>V<sub>A</sub> = 20 V</span><span>n = 1.2</span></div>
+                            <p>If no load-line intersection lies between 0 and 4 V, automatic mode retains the previous V<sub>CE</sub>.</p>
+                        </details>
+                    </aside>
+                    <section class="results" aria-label="Simulation results">
+                        <div class="readouts">
+                            <div class="panel readout">
+                                <div class="readout-label">Collector current <span class="readout-symbol">I<sub>C</sub></span></div>
+                                <div class="readout-value">{{ (collectorCurrent * 1000).toFixed(2) }}<span>mA</span></div>
+                            </div>
+                            <div class="panel readout">
+                                <div class="readout-label">Base current <span class="readout-symbol">I<sub>B</sub></span></div>
+                                <div class="readout-value">{{ baseCurrentReading.value }}<span>{{ baseCurrentReading.unit }}</span></div>
+                            </div>
+                            <div class="panel readout">
+                                <div class="readout-label">Operating voltage <span class="readout-symbol">V<sub>CE</sub></span></div>
+                                <div class="readout-value">{{ Vce.toFixed(2) }}<span>V</span></div>
+                            </div>
+                        </div>
+                        <section class="panel plot-panel" aria-labelledby="plot-title">
+                            <div class="panel-heading plot-heading">
+                                <div>
+                                    <h3 id="plot-title">Four-quadrant characteristics</h3>
+                                    <p class="plot-subtitle">Output, transfer, and input relationships</p>
+                                </div>
+                                <span class="mode-badge"><span class="status-dot" aria-hidden="true"></span>{{ autoVce ? 'Auto bias' : 'Manual bias' }}</span>
+                            </div>
+                            <div class="plot-scroll" role="region" aria-label="Four interactive Plotly characteristic plots. Scroll horizontally on small screens." tabindex="0">
+                                <div id="plot"></div>
+                            </div>
+                            <div class="plot-caption">
+                                <span class="guide-key">Dashed guides mark the selected operating point</span>
+                                <span>Hover to inspect · Drag to zoom · Double-click to reset</span>
+                            </div>
+                        </section>
+                        <div class="hint">
+                            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="7.5" /><path d="M10 9v5m0-8v1" /></svg>
+                            <p>Start with V<sub>BE</sub> to explore collector current. Enable <strong>Auto operating point</strong> to follow the load line as you change the supply or resistance. Axis ranges stay fixed for comparison.</p>
+                        </div>
+                    </section>
                 </div>
-                <span class="device-tag">NPN / Ebers-Moll</span>
-            </div>
-            <div class="workspace">
-                <aside aria-label="Simulation settings">
-                    <section class="panel" aria-labelledby="controls-title">
-                        <div class="panel-heading">
-                            <h2 id="controls-title">Circuit parameters</h2>
-                            <button class="reset" type="button" @click="resetParameters" title="Reset all parameters to their starting values">
-                                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6a6 6 0 1 1 0 4M2 2v4h4" /></svg>
-                                Reset
-                            </button>
-                        </div>
-                        <div class="controls">
-                            <div class="control">
-                                <div class="control-top">
-                                    <label for="vcc">Supply <span class="symbol">V<sub>CC</sub></span></label>
-                                    <output for="vcc">{{ Vcc.toFixed(1) }} V</output>
-                                </div>
-                                <input id="vcc" type="range" min="2" max="10" step="0.1" v-model.number="Vcc" :style="rangeFill(Vcc, 2, 10)" :aria-valuetext="Vcc.toFixed(1) + ' volts'">
-                                <div class="range-labels" aria-hidden="true"><span>2 V</span><span>10 V</span></div>
+            </section>
+            <section class="topic" aria-labelledby="semilog-title">
+                <h2 class="topic-title" id="semilog-title">Idelized Gummel plot</h2>
+                <div class="workspace">
+                    <aside aria-label="Ebers-Moll parameters">
+                        <section class="panel" aria-labelledby="semilog-controls-title">
+                            <div class="panel-heading">
+                                <h3 id="semilog-controls-title">Model parameters</h3>
+                                <button class="reset" type="button" @click="resetSemilogParameters" title="Reset the Ebers-Moll parameters">
+                                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6a6 6 0 1 1 0 4M2 2v4h4" /></svg>
+                                    Reset
+                                </button>
                             </div>
-                            <div class="control">
-                                <div class="control-top">
-                                    <label for="vbe">Base-emitter <span class="symbol">V<sub>BE</sub></span></label>
-                                    <output for="vbe">{{ Vbe.toFixed(3) }} V</output>
+                            <div class="controls semilog-controls">
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="beta-f">Forward gain <span class="symbol">β<sub>F</sub></span></label>
+                                        <output for="beta-f">{{ semilog.betaF }}</output>
+                                    </div>
+                                    <input id="beta-f" type="range" min="1" max="1000" step="1" v-model.number="semilog.betaF" :style="rangeFill(semilog.betaF, 1, 1000)">
+                                    <div class="range-labels" aria-hidden="true"><span>1</span><span>1000</span></div>
                                 </div>
-                                <input id="vbe" type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe" :style="rangeFill(Vbe, 0, 0.75)" :aria-valuetext="Vbe.toFixed(5) + ' volts'">
-                                <div class="range-labels" aria-hidden="true"><span>0 V</span><span>0.75 V</span></div>
-                            </div>
-                            <div class="control">
-                                <div class="control-top">
-                                    <label for="vce">Collector-emitter <span class="symbol">V<sub>CE</sub></span></label>
-                                    <output for="vce">{{ Vce.toFixed(2) }} V</output>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="beta-r">Reverse gain <span class="symbol">β<sub>R</sub></span></label>
+                                        <output for="beta-r">{{ semilog.betaR.toFixed(1) }}</output>
+                                    </div>
+                                    <input id="beta-r" type="range" min="0.1" max="10" step="0.1" v-model.number="semilog.betaR" :style="rangeFill(semilog.betaR, 0.1, 10)">
+                                    <div class="range-labels" aria-hidden="true"><span>0.1</span><span>10</span></div>
                                 </div>
-                                <input id="vce" type="range" min="0" max="3" step="0.1" v-model.number="Vce" :disabled="autoVce" :style="rangeFill(Vce, 0, 3)" :aria-valuetext="Vce.toFixed(2) + ' volts'" aria-describedby="auto-description">
-                                <div class="range-labels" aria-hidden="true"><span>0 V</span><span>3 V</span></div>
-                            </div>
-                            <div class="control">
-                                <div class="control-top">
-                                    <label for="rc">Collector resistor <span class="symbol">R<sub>C</sub></span></label>
-                                    <output for="rc">{{ Rc }} Ω</output>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="vbc">Base-collector <span class="symbol">V<sub>BC</sub></span></label>
+                                        <output for="vbc">{{ semilog.vbc.toFixed(2) }} V</output>
+                                    </div>
+                                    <input id="vbc" type="range" min="-1" max="0.7" step="0.01" v-model.number="semilog.vbc" :style="rangeFill(semilog.vbc, -1, 0.7)" :aria-valuetext="semilog.vbc.toFixed(2) + ' volts'">
+                                    <div class="range-labels" aria-hidden="true"><span>−1 V</span><span>0.7 V</span></div>
                                 </div>
-                                <input id="rc" type="range" min="10" max="1000" step="10" v-model.number="Rc" :style="rangeFill(Rc, 10, 1000)" :aria-valuetext="Rc + ' ohms'">
-                                <div class="range-labels" aria-hidden="true"><span>10 Ω</span><span>1 kΩ</span></div>
                             </div>
-                        </div>
-                        <div class="auto-control">
-                            <label class="switch-label" for="auto-vce">
-                                Auto operating point
-                                <input id="auto-vce" type="checkbox" role="switch" v-model="autoVce" aria-describedby="auto-description">
-                            </label>
-                            <p id="auto-description">Set V<sub>CE</sub> from the load-line intersection within the plotted range.</p>
-                        </div>
-                    </section>
-                    <details class="model-note">
-                        <summary>About this model</summary>
-                        <p>An Ebers-Moll model with Early effect. Adjust the bias to see how all four characteristic plots relate to the same operating point.</p>
-                        <div class="model-params"><span>β<sub>F</sub> = 100</span><span>V<sub>A</sub> = 20 V</span><span>n = 1.2</span></div>
-                        <p>If no load-line intersection lies between 0 and 4 V, automatic mode retains the previous V<sub>CE</sub>.</p>
-                    </details>
-                </aside>
-                <section class="results" aria-label="Simulation results">
-                    <div class="readouts">
-                        <div class="panel readout">
-                            <div class="readout-label">Collector current <span class="readout-symbol">I<sub>C</sub></span></div>
-                            <div class="readout-value">{{ (collectorCurrent * 1000).toFixed(2) }}<span>mA</span></div>
-                        </div>
-                        <div class="panel readout">
-                            <div class="readout-label">Base current <span class="readout-symbol">I<sub>B</sub></span></div>
-                            <div class="readout-value">{{ baseCurrentReading.value }}<span>{{ baseCurrentReading.unit }}</span></div>
-                        </div>
-                        <div class="panel readout">
-                            <div class="readout-label">Operating voltage <span class="readout-symbol">V<sub>CE</sub></span></div>
-                            <div class="readout-value">{{ Vce.toFixed(2) }}<span>V</span></div>
+                            <dl class="model-constants">
+                                <div><dt>I<sub>S</sub></dt><dd>10.0 fA</dd></div>
+                                <div><dt>V<sub>th</sub></dt><dd>25.0 mV</dd></div>
+                            </dl>
+                        </section>
+                    </aside>
+                    <div class="results">
+                        <section class="panel plot-panel" aria-labelledby="semilog-plot-title">
+                            <div class="panel-heading plot-heading">
+                                <div>
+                                    <h3 id="semilog-plot-title">Collector and base currents</h3>
+                                    <p class="plot-subtitle">V<sub>BE</sub> sweep at fixed V<sub>BC</sub> · Logarithmic current scale</p>
+                                </div>
+                            </div>
+                            <div class="plot-scroll" role="region" aria-label="Interactive collector and base currents versus base-emitter voltage. Scroll horizontally on small screens." tabindex="0">
+                                <div id="semilog-plot"></div>
+                            </div>
+                            <div class="plot-caption">
+                                <span class="guide-key">Dashed lines show reference currents and extrapolations</span>
+                                <span>Red arrows identify saturation-current levels</span>
+                            </div>
+                        </section>
+                        <div class="hint">
+                            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="7.5" /><path d="M10 9v5m0-8v1" /></svg>
+                            <p>Both currents are shown as magnitudes, |I<sub>C</sub>| and |I<sub>B</sub>|. Hover to inspect their signed values. Exact zeros leave gaps on the logarithmic axis.</p>
                         </div>
                     </div>
-                    <section class="panel plot-panel" aria-labelledby="plot-title">
-                        <div class="panel-heading plot-heading">
-                            <div>
-                                <h2 id="plot-title">Four-quadrant characteristics</h2>
-                                <p class="plot-subtitle">Output, transfer, and input relationships</p>
-                            </div>
-                            <span class="mode-badge"><span class="status-dot" aria-hidden="true"></span>{{ autoVce ? 'Auto bias' : 'Manual bias' }}</span>
-                        </div>
-                        <div class="plot-scroll" role="region" aria-label="Four interactive Plotly characteristic plots. Scroll horizontally on small screens." tabindex="0">
-                            <div id="plot"></div>
-                        </div>
-                        <div class="plot-caption">
-                            <span class="guide-key">Dashed guides mark the selected operating point</span>
-                            <span>Hover to inspect · Drag to zoom · Double-click to reset</span>
-                        </div>
-                    </section>
-                    <div class="hint">
-                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="7.5" /><path d="M10 9v5m0-8v1" /></svg>
-                        <p>Start with V<sub>BE</sub> to explore collector current. Enable <strong>Auto operating point</strong> to follow the load line as you change the supply or resistance. Axis ranges stay fixed for comparison.</p>
-                    </div>
-                </section>
-            </div>
-            <footer class="footer"><span><!-- A --></span><span><!-- B --></span></footer>
+                </div>
+            </section>
         </main>
     </div>
-    <noscript>Enable JavaScript to use the interactive transistor lab.</noscript>
+    <noscript>Enable JavaScript to explore the BJT characteristics.</noscript>
 
 <script>
 const { createApp } = Vue;
@@ -279,8 +333,8 @@ const vth = 0.025;
 const Va = 20;
 const n = 1.2;
 const I_S = 5e-12;
-const betaF = 100;
-const betaR = 2;
+const betaF = 300;
+const betaR = 3;
 const I_S_BE = I_S / betaF;
 const I_S_BC = I_S / betaR;
 
@@ -296,6 +350,28 @@ function linspace(a, b, n) {
     return Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
 }
 
+// Parameters for the independent model in the Python semilog example.
+const SEMILOG_IS = 5e-12;
+const SEMILOG_VTH = 0.025;
+
+function calcSemilogCurrents(vbe, vbc, betaF, betaR) {
+    const alphaR = betaR / (betaR + 1);
+    const exponentialBE = Math.exp(vbe / SEMILOG_VTH);
+    const exponentialBC = Math.exp(vbc / SEMILOG_VTH);
+    return {
+        Ic: SEMILOG_IS * (exponentialBE - exponentialBC)
+            - (SEMILOG_IS / alphaR) * (exponentialBC - 1),
+        Ib: SEMILOG_IS * ((exponentialBE - 1) / betaF + (exponentialBC - 1) / betaR)
+    };
+}
+
+function formatEngineering(value, unit) {
+    if (value === 0) return `0.0 ${unit}`.trim();
+    const prefixes = ['y', 'z', 'a', 'f', 'p', 'n', 'µ', 'm', '', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
+    const exponent = Math.max(-24, Math.min(24, 3 * Math.floor(Math.log10(Math.abs(value)) / 3)));
+    return `${(value / 10 ** exponent).toFixed(1)} ${prefixes[exponent / 3 + 8]}${unit}`.trim();
+}
+
 createApp({
     data() {
         return {
@@ -308,11 +384,15 @@ createApp({
             gridVce: linspace(0, 4, 200),
             gridVbe: linspace(0, 1, 200),
             autoVce: false,
+            semilog: { betaF: 300, betaR: 3, vbc: -1 },
         };
     },
     mounted() {
         // Wait until Vue removes v-cloak so Plotly measures the visible panel.
-        this.$nextTick(this.updatePlot);
+        this.$nextTick(() => {
+            this.updatePlot();
+            this.updateSemilogPlot();
+        });
     },
     computed: {
         collectorCurrent() {
@@ -334,7 +414,8 @@ createApp({
         Vce: 'updatePlot',
         Vcc: 'updatePlot',
         Rc:  'updatePlot',
-        autoVce: 'updatePlot'
+        autoVce: 'updatePlot',
+        semilog: { handler: 'updateSemilogPlot', deep: true }
     },
     methods: {
         rangeFill(value, min, max) {
@@ -342,6 +423,9 @@ createApp({
         },
         resetParameters() {
             Object.assign(this, { Vbe: 0.71, Vce: 0.5, Vcc: 4, Rc: 30, autoVce: false });
+        },
+        resetSemilogParameters() {
+            this.semilog = { betaF: 300, betaR: 3, vbc: -1 };
         },
         findLoadLineIntersection() {
             const Vbe = this.Vbe;
@@ -367,6 +451,98 @@ createApp({
                 prevV = Vce;
             }
             return this.Vce; // fallback (no intersection)
+        },
+        updateSemilogPlot() {
+            const { betaF, betaR, vbc } = this.semilog;
+            const voltages = linspace(-0.2, 0.7, 500);
+            const currents = voltages.map(vbe => calcSemilogCurrents(vbe, vbc, betaF, betaR));
+            const I_SBE = SEMILOG_IS / betaF;
+            const I_SBC = SEMILOG_IS / betaR;
+            const extrapolated = calcSemilogCurrents(0.8, vbc, betaF, betaR);
+            // Plot magnitudes, preserving negative currents; exact zero has no logarithm.
+            const magnitudeOrNull = value => Math.abs(value) || null;
+            const lineTrace = (x, y, name, color, dash = 'solid') => ({
+                x,
+                y: y.map(magnitudeOrNull),
+                type: 'scatter',
+                mode: 'lines',
+                name,
+                line: { color, width: dash === 'solid' ? 2 : 1.3, dash },
+                customdata: x.map((voltage, index) => [
+                    formatEngineering(voltage, 'V'),
+                    formatEngineering(Math.abs(y[index]), 'A'),
+                    formatEngineering(y[index], 'A')
+                ]),
+                hovertemplate: 'V<sub>BE</sub>: %{customdata[0]}<br>Magnitude: %{customdata[1]}<br>Signed current: %{customdata[2]}<extra>%{fullData.name}</extra>'
+            });
+            const traces = [
+                lineTrace(voltages, currents.map(current => current.Ic), '|I<sub>C</sub>|', '#187361'),
+                lineTrace(voltages, currents.map(current => current.Ib), '|I<sub>B</sub>|', '#cc853b'),
+                lineTrace([-0.2, 0], [SEMILOG_IS, SEMILOG_IS], 'I<sub>S</sub>', '#738b9a', 'dash'),
+                lineTrace([-0.2, 0], [I_SBE, I_SBE], 'I<sub>SBE</sub>', '#9b8aad', 'dash'),
+                lineTrace([0, 0.8], [SEMILOG_IS, extrapolated.Ic], 'Extrapolated |I<sub>C</sub>|', '#187361', 'dash'),
+                lineTrace([0, 0.8], [I_SBE, extrapolated.Ib], 'Extrapolated |I<sub>B</sub>|', '#cc853b', 'dash')
+            ];
+            const referenceCurrents = [
+                [SEMILOG_IS, 'I<sub>S</sub>', 1],
+                [I_SBE, 'I<sub>SBE</sub>', 1],
+                [I_SBC, 'I<sub>SBC</sub>', 1],
+                [SEMILOG_IS + I_SBC, 'I<sub>S</sub> + I<sub>SBC</sub>', 3],
+                [I_SBE + I_SBC, 'I<sub>SBE</sub> + I<sub>SBC</sub>', 0.1]
+            ];
+            const annotations = referenceCurrents.map(([current, label, factor]) => ({
+                x: 0,
+                // Plotly annotations on log axes use base-10 exponents.
+                y: Math.log10(current),
+                ax: -0.15,
+                ay: Math.log10(current * 100 * factor),
+                xref: 'x', yref: 'y', axref: 'x', ayref: 'y',
+                text: `${label} = ${formatEngineering(current, 'A')}`,
+                showarrow: true,
+                arrowcolor: '#c44942',
+                arrowwidth: 0.8,
+                arrowhead: 2,
+                arrowsize: 0.8,
+                xanchor: 'left',
+                font: { size: 11, color: '#43514b' },
+                bgcolor: 'rgba(255,255,255,0.85)',
+                borderpad: 2
+            }));
+            const positiveCurrents = traces.flatMap(trace => trace.y).filter(value => value > 0);
+            const minExponent = Math.floor(Math.log10(Math.min(...positiveCurrents)));
+            const maxExponent = Math.ceil(Math.log10(Math.max(...positiveCurrents)));
+            const currentTicks = linspace(minExponent, maxExponent, maxExponent - minExponent + 1)
+                .map(exponent => 10 ** exponent);
+            const voltageTicks = Array.from({ length: 10 }, (_, i) => (i - 2) / 10);
+            const layout = {
+                xaxis: {
+                    title: 'V<sub>BE</sub> (V)',
+                    range: [-0.2, 0.7],
+                    tickmode: 'array',
+                    tickvals: voltageTicks,
+                    ticktext: voltageTicks.map(value => formatEngineering(value, '')),
+                    showgrid: true, gridcolor: '#d7ded7', griddash: 'dash', zeroline: false,
+                    minor: { dtick: 0.02, showgrid: true, gridcolor: '#eff2ee', gridwidth: 0.5, griddash: 'dot', ticks: 'inside', tickcolor: '#b5bfb6' }
+                },
+                yaxis: {
+                    title: '|I<sub>C</sub>|, |I<sub>B</sub>| (A)',
+                    type: 'log',
+                    range: [minExponent - 0.3, maxExponent + 0.3],
+                    tickmode: 'array',
+                    tickvals: currentTicks,
+                    ticktext: currentTicks.map(value => formatEngineering(value, '')),
+                    showgrid: true, gridcolor: '#d7ded7', griddash: 'dash', zeroline: false,
+                    minor: { dtick: 'D1', showgrid: true, gridcolor: '#eff2ee', gridwidth: 0.5, griddash: 'dot', ticks: 'inside', tickcolor: '#b5bfb6' }
+                },
+                annotations,
+                legend: { orientation: 'h', x: 0, y: 1.08, yanchor: 'bottom', font: { size: 11 } },
+                margin: { t: 75, r: 30, b: 65, l: 80 },
+                font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', size: 11, color: '#63716c' },
+                hoverlabel: { bgcolor: '#ffffff' },
+                paper_bgcolor: '#ffffff',
+                plot_bgcolor: '#ffffff'
+            };
+            Plotly.react('semilog-plot', traces, layout, { responsive: true, displaylogo: false });
         },
         updatePlot() {
             if (this.autoVce) {
