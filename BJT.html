@@ -98,9 +98,19 @@
         .hint svg { flex-shrink: 0; margin-top: 1px; }
         .hint p { margin: 0; line-height: 1.7; }
         #semilog-plot { height: 590px; }
-        .model-constants { margin: 0; padding: 16px 22px; border-top: 1px solid var(--line); background: #fafbf9; border-radius: 0 0 12px 12px; }
+        .model-summary { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px solid var(--line); background: #fafbf9; border-radius: 0 0 12px 12px; }
+        .model-constants { min-width: 0; margin: 0; padding: 16px 22px; }
         .model-constants div { display: flex; justify-content: space-between; gap: 16px; padding: 4px 0; font-size: 11px; color: var(--muted); }
         .model-constants dd { margin: 0; font-family: var(--mono); }
+        .operating-point { min-width: 0; padding: 18px 22px; border-top: 1px solid var(--line); }
+        .operating-point-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .region-badge { padding: 5px 9px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 600; }
+        .region-badge[data-region="cutoff"] { background: #edf0ed; color: var(--muted); }
+        .region-badge[data-region="saturation"] { background: #fff3df; color: #8c5d13; }
+        .region-badge[data-region="reverse-active"] { background: #f1edf7; color: #71518e; }
+        .voltage-equation { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 10px; font: 12px/1.8 var(--mono); }
+        .voltage-equation strong { color: var(--accent); font-weight: 600; white-space: nowrap; }
+        .bias-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
         noscript { display: block; padding: 32px; }
         @media (min-width: 1500px) { #plot { height: 590px; } }
         @media (max-width: 1100px) {
@@ -114,7 +124,6 @@
         }
         @media (max-width: 900px) {
             .workspace { grid-template-columns: 1fr; }
-            .semilog-controls .control:last-child { grid-column: 1 / -1; }
             .controls { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
             .control:nth-child(3) { border-bottom: 0; }
             .auto-control p { max-width: none; }
@@ -147,6 +156,15 @@
             .plot-subtitle { font-size: 10px; }
             .mode-badge { font-size: 9px; }
             .plot-caption { flex-wrap: wrap; padding-left: 18px; padding-right: 18px; }
+            .operating-point { padding: 16px 18px; }
+        }
+        @media (orientation: portrait) {
+            .model-summary { grid-template-columns: minmax(85px, 1fr) minmax(0, 2fr); }
+            .model-constants { padding: 16px 12px; }
+            .model-constants div { flex-wrap: wrap; column-gap: 8px; row-gap: 0; }
+            .operating-point { padding: 16px; border-top: 0; border-left: 1px solid var(--line); }
+            .operating-point-heading h3 { font-size: 12px; }
+            .voltage-equation { font-size: 11px; }
         }
         @media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; } }
     </style>
@@ -257,7 +275,7 @@
                 </div>
             </section>
             <section class="topic" aria-labelledby="semilog-title">
-                <h2 class="topic-title" id="semilog-title">Idelized Gummel plot</h2>
+                <h2 class="topic-title" id="semilog-title">Gummel plot</h2>
                 <div class="workspace">
                     <aside aria-label="Ebers-Moll parameters">
                         <section class="panel" aria-labelledby="semilog-controls-title">
@@ -293,11 +311,32 @@
                                     <input id="vbc" type="range" min="-1" max="0.7" step="0.01" v-model.number="semilog.vbc" :style="rangeFill(semilog.vbc, -1, 0.7)" :aria-valuetext="semilog.vbc.toFixed(2) + ' volts'">
                                     <div class="range-labels" aria-hidden="true"><span>−1 V</span><span>0.7 V</span></div>
                                 </div>
+                                <div class="control">
+                                    <div class="control-top">
+                                        <label for="semilog-vbe">Track base–emitter <span class="symbol">V<sub>BE</sub></span></label>
+                                        <output for="semilog-vbe">{{ semilog.vbe.toFixed(3) }} V</output>
+                                    </div>
+                                    <input id="semilog-vbe" type="range" min="-0.2" max="0.7" step="0.001" v-model.number="semilog.vbe" :style="rangeFill(semilog.vbe, -0.2, 0.7)" :aria-valuetext="semilog.vbe.toFixed(3) + ' volts'" aria-describedby="semilog-operating-point">
+                                    <div class="range-labels" aria-hidden="true"><span>−0.2 V</span><span>0.7 V</span></div>
+                                </div>
                             </div>
-                            <dl class="model-constants">
-                                <div><dt>I<sub>S</sub></dt><dd>10.0 fA</dd></div>
-                                <div><dt>V<sub>th</sub></dt><dd>25.0 mV</dd></div>
-                            </dl>
+                            <div class="model-summary">
+                                <dl class="model-constants">
+                                    <div><dt>I<sub>S</sub></dt><dd>{{ semilogConstants.saturationCurrent }}</dd></div>
+                                    <div><dt>V<sub>th</sub></dt><dd>{{ semilogConstants.thermalVoltage }}</dd></div>
+                                </dl>
+                                <div class="operating-point" id="semilog-operating-point" aria-live="polite" aria-atomic="true">
+                                    <div class="operating-point-heading">
+                                        <h3>Selected operating point</h3>
+                                        <span class="region-badge" :data-region="semilogOperatingPoint.region">{{ semilogOperatingPoint.label }}</span>
+                                    </div>
+                                    <p class="voltage-equation">
+                                        <span>V<sub>CE</sub> = V<sub>BE</sub> − V<sub>BC</sub></span>
+                                        <span>= {{ semilog.vbe.toFixed(3) }} V − ({{ semilog.vbc.toFixed(2) }} V) = <strong>{{ semilogOperatingPoint.vce.toFixed(3) }} V</strong></span>
+                                    </p>
+                                    <p class="bias-note">V<sub>BE</sub> {{ semilog.vbe > 0 ? '>' : '≤' }} 0 V · V<sub>BC</sub> {{ semilog.vbc > 0 ? '>' : '≤' }} 0 V. Ideal junction-bias regions; zero bias is included with the non-forward-biased side.</p>
+                                </div>
+                            </div>
                         </section>
                     </aside>
                     <div class="results">
@@ -384,7 +423,7 @@ createApp({
             gridVce: linspace(0, 4, 200),
             gridVbe: linspace(0, 1, 200),
             autoVce: false,
-            semilog: { betaF: 300, betaR: 3, vbc: -1 },
+            semilog: { betaF: 300, betaR: 3, vbc: -1, vbe: 0.6 },
         };
     },
     mounted() {
@@ -395,6 +434,20 @@ createApp({
         });
     },
     computed: {
+        semilogConstants() {
+            return {
+                saturationCurrent: formatEngineering(SEMILOG_IS, 'A'),
+                thermalVoltage: formatEngineering(SEMILOG_VTH, 'V')
+            };
+        },
+        semilogOperatingPoint() {
+            const { vbe, vbc } = this.semilog;
+            // Ideal NPN regions follow the signs of the B–E and B–C biases.
+            const [region, label] = vbe > 0
+                ? (vbc > 0 ? ['saturation', 'Saturation'] : ['forward-active', 'Forward-active'])
+                : (vbc > 0 ? ['reverse-active', 'Reverse-active'] : ['cutoff', 'Cutoff']);
+            return { vce: vbe - vbc, region, label };
+        },
         collectorCurrent() {
             return calcIc(this.Vbe, this.Vbe - this.Vce);
         },
@@ -425,7 +478,7 @@ createApp({
             Object.assign(this, { Vbe: 0.71, Vce: 0.5, Vcc: 4, Rc: 30, autoVce: false });
         },
         resetSemilogParameters() {
-            this.semilog = { betaF: 300, betaR: 3, vbc: -1 };
+            this.semilog = { betaF: 300, betaR: 3, vbc: -1, vbe: 0.6 };
         },
         findLoadLineIntersection() {
             const Vbe = this.Vbe;
@@ -453,7 +506,7 @@ createApp({
             return this.Vce; // fallback (no intersection)
         },
         updateSemilogPlot() {
-            const { betaF, betaR, vbc } = this.semilog;
+            const { betaF, betaR, vbc, vbe } = this.semilog;
             const voltages = linspace(-0.2, 0.7, 500);
             const currents = voltages.map(vbe => calcSemilogCurrents(vbe, vbc, betaF, betaR));
             const I_SBE = SEMILOG_IS / betaF;
@@ -535,6 +588,14 @@ createApp({
                     minor: { dtick: 'D1', showgrid: true, gridcolor: '#eff2ee', gridwidth: 0.5, griddash: 'dot', ticks: 'inside', tickcolor: '#b5bfb6' }
                 },
                 annotations,
+                shapes: [{
+                    type: 'line',
+                    xref: 'x', yref: 'paper',
+                    x0: vbe, x1: vbe, y0: 0, y1: 1,
+                    line: { color: '#43514b', width: 1.5, dash: 'dot' }
+                }],
+                // Keep a user's zoom while moving only the tracking voltage.
+                uirevision: `${betaF}:${betaR}:${vbc}`,
                 legend: { orientation: 'h', x: 0, y: 1.08, yanchor: 'bottom', font: { size: 11 } },
                 margin: { t: 75, r: 30, b: 65, l: 80 },
                 font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', size: 11, color: '#63716c' },
