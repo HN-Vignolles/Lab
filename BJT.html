@@ -2,39 +2,279 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>BJT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f3" />
+    <title>BJT · Transistor Lab</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
     <!-- ChatGPT + HNV -->
     <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f6f3;
+            --surface: #ffffff;
+            --ink: #202e2b;
+            --muted: #63716c;
+            --line: #dfe5df;
+            --accent: #187361;
+            --accent-soft: #eaf4ef;
+            --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+        }
+        * { box-sizing: border-box; }
         body {
-            font-family: sans-serif;
-            margin: 20px;
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
-        .controls {
-            margin-bottom: 10px;
+        button, input { font: inherit; }
+        button { cursor: pointer; }
+        button:focus-visible, input:focus-visible, summary:focus-visible {
+            outline: 3px solid #77baa8;
+            outline-offset: 5px;
         }
-        label {
-            margin-right: 15px;
+        sub { font-size: .7em; }
+        [v-cloak] { display: none; }
+        .shell { max-width: 1600px; padding: 0 40px; margin: 0 auto; }
+        .topbar { border-bottom: 1px solid var(--line); }
+        .topbar-inner { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .brand { display: flex; align-items: center; gap: 11px; font-weight: 650; letter-spacing: -.3px; font-size: 16px; }
+        .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: var(--accent); border-radius: 9px; }
+        .topbar-note { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; flex-shrink: 0; }
+        main.shell { padding-top: 34px; padding-bottom: 26px; }
+        .intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 28px; }
+        .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 10px; font-weight: 700; letter-spacing: 1.7px; text-transform: uppercase; }
+        h1 { margin: 0; font-size: clamp(28px, 3vw, 38px); line-height: 1.2; font-weight: 650; letter-spacing: -1.3px; }
+        .intro-copy { color: var(--muted); margin: 10px 0 0; }
+        .device-tag { border: 1px solid var(--line); border-radius: 6px; padding: 7px 11px; font: 11px var(--mono); white-space: nowrap; }
+        .workspace { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 24px; align-items: start; }
+        .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 3px 12px #243d2b03; }
+        .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+        h2 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -.2px; }
+        .reset { border: 0; background: transparent; color: var(--muted); display: flex; align-items: center; gap: 5px; padding: 4px 0 4px 6px; font-size: 11px; }
+        .reset:hover { color: var(--accent); }
+        .controls { padding: 0 22px; }
+        .control { padding: 21px 0; border-bottom: 1px solid #edf0ec; min-width: 0; }
+        .control:last-child { border-bottom: 0; }
+        .control-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 13px; }
+        .control label { font-size: 12px; font-weight: 550; }
+        .symbol { color: var(--muted); font-weight: 400; margin-left: 4px; }
+        .control output { font: 12px var(--mono); color: var(--accent); background: var(--accent-soft); padding: 4px 7px; border-radius: 4px; white-space: nowrap; }
+        input[type="range"] { display: block; width: 100%; margin: 0; height: 20px; background: transparent; cursor: pointer; appearance: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--fill), #e4e9e4 var(--fill)); }
+        input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: #e4e9e4; }
+        input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--accent); }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: var(--surface); border: 4px solid var(--accent); margin-top: -5.5px; box-shadow: 0 1px 3px #153d2820; }
+        input[type="range"]::-moz-range-thumb { width: 7px; height: 7px; border-radius: 50%; background: var(--surface); border: 4px solid var(--accent); box-shadow: 0 1px 3px #153d2820; }
+        input[type="range"]:disabled { opacity: .35; cursor: not-allowed; }
+        .range-labels { display: flex; justify-content: space-between; margin-top: 5px; font: 10px var(--mono); color: var(--muted); }
+        .auto-control { padding: 17px 22px; border-top: 1px solid var(--line); background: #fafbf9; border-radius: 0 0 12px 12px; }
+        .switch-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 12px; font-weight: 550; }
+        .switch-label input { appearance: none; -webkit-appearance: none; width: 30px; height: 18px; border-radius: 20px; background: #cbd5ce; margin: 0; padding: 3px; flex-shrink: 0; cursor: pointer; transition: background .15s; }
+        .switch-label input::before { content: ""; display: block; width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 1px 2px #0002; transition: transform .15s; }
+        .switch-label input:checked { background: var(--accent); }
+        .switch-label input:checked::before { transform: translateX(12px); }
+        .auto-control p { margin: 7px 0 0; font-size: 11px; line-height: 1.6; color: var(--muted); }
+        .model-note { padding: 20px 4px 0; }
+        .model-note summary { cursor: pointer; color: var(--muted); font-size: 11px; }
+        .model-note p { color: var(--muted); font-size: 11px; line-height: 1.7; margin: 12px 0; }
+        .model-params { display: flex; gap: 14px; font: 11px var(--mono); color: var(--muted); }
+        .results { min-width: 0; }
+        .readouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+        .readout { padding: 17px 20px 16px; }
+        .readout-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
+        .readout-symbol { font-family: var(--mono); color: #88928d; }
+        .readout-value { font: 500 clamp(23px, 2.5vw, 32px)/1.25 var(--mono); letter-spacing: -1.2px; margin-top: 12px; white-space: nowrap; }
+        .readout-value span { font: 12px var(--mono); color: var(--muted); letter-spacing: 0; margin-left: 5px; }
+        .readout:first-child .readout-value { color: var(--accent); }
+        .plot-panel { overflow: hidden; }
+        .plot-heading { padding-top: 18px; padding-bottom: 18px; }
+        .plot-subtitle { margin: 3px 0 0; font-size: 11px; color: var(--muted); }
+        .mode-badge { display: flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 5px 8px; font: 10px var(--mono); white-space: nowrap; }
+        .plot-scroll { overflow-x: auto; }
+        #plot { width: 100%; min-width: 570px; height: 540px; }
+        .plot-caption { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--line); margin: 0; padding: 13px 22px; font-size: 10px; color: var(--muted); }
+        .guide-key { display: flex; align-items: center; gap: 8px; }
+        .guide-key::before { content: ""; display: block; width: 18px; border-top: 1px dashed #8c9690; }
+        .hint { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 0 3px; color: var(--muted); font-size: 11px; }
+        .hint svg { flex-shrink: 0; margin-top: 1px; }
+        .hint p { margin: 0; line-height: 1.7; }
+        .footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 30px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+        .footer span:last-child { font-family: var(--mono); }
+        noscript { display: block; padding: 32px; }
+        @media (min-width: 1500px) { #plot { height: 590px; } }
+        @media (max-width: 1100px) {
+            .shell { padding-left: 24px; padding-right: 24px; }
+            .workspace { grid-template-columns: 260px minmax(0, 1fr); gap: 18px; }
+            .readout { padding: 15px 12px; }
+            .readout-label { font-size: 10px; }
+            .readouts { gap: 10px; }
+            .readout-symbol { display: none; }
+            .plot-caption { flex-wrap: wrap; gap: 6px; }
         }
+        @media (max-width: 900px) {
+            .workspace { grid-template-columns: 1fr; }
+            .controls { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
+            .control:nth-child(3) { border-bottom: 0; }
+            .auto-control p { max-width: none; }
+            .model-note { padding: 12px 4px 0; }
+            .readout { padding: 17px 20px; }
+            .readout-label { font-size: 11px; }
+            .readout-symbol { display: inline; }
+            .readout-value { font-size: 28px; }
+            .plot-caption { flex-wrap: nowrap; }
+        }
+        @media (max-width: 540px) {
+            .shell { padding-left: 18px; padding-right: 18px; }
+            .topbar-inner { min-height: 64px; }
+            .topbar-note { font-size: 10px; }
+            .brand { font-size: 14px; }
+            main.shell { padding-top: 26px; }
+            .intro { margin-bottom: 22px; }
+            .intro-copy { font-size: 12px; max-width: 290px; }
+            .device-tag { display: none; }
+            .controls { padding: 0 18px; column-gap: 20px; }
+            .control { padding: 18px 0; }
+            .control-top { flex-wrap: wrap; gap: 8px; }
+            .control label { width: 100%; font-size: 11px; }
+            .panel-heading { padding-left: 18px; padding-right: 18px; }
+            .readouts { gap: 8px; }
+            .readout { padding: 14px 10px; }
+            .readout-label { font-size: 9px; }
+            .readout-symbol { display: none; }
+            .readout-value { font-size: 21px; letter-spacing: -.8px; }
+            .readout-value span { display: block; font-size: 10px; margin: 5px 0 0; }
+            .plot-heading { align-items: flex-start; gap: 8px; }
+            .plot-heading h2 { font-size: 12px; }
+            .plot-subtitle { font-size: 10px; }
+            .mode-badge { font-size: 9px; }
+            .plot-caption { flex-wrap: wrap; padding-left: 18px; padding-right: 18px; }
+            .footer { flex-wrap: wrap; gap: 4px; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before { transition: none !important; } }
     </style>
 </head>
 <body>
-    <div id="app">
-        <h2>BJT Output Characteristics & Load Line (cf. Vierquadrantenkennlinienfeld)</h2>
-        <div class="controls">
-            <label>Vcc <input type="range" min="2" max="10" step="0.1" v-model.number="Vcc"> {{ Vcc.toFixed(1) }} V </label>
-            <label>Vbe <input type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe"> {{ Vbe.toFixed(3) }} V </label>
-            <label>Vce <input type="range" min="0" max="3" step="0.1" v-model.number="Vce" :disabled="autoVce"> {{ Vce.toFixed(2) }} V </label>
-            <label>Rc  <input type="range" min="10" max="1000" step="10" v-model.number="Rc"> {{ Rc }} Ω
-            <label><input type="checkbox" v-model="autoVce">Vce from load-line intersection</label>
-        </div>
+    <div id="app" v-cloak>
+        <header class="topbar">
+            <!-- TODO class {shell, topbar-inner, brand, topbar-note} -->
+        </header>
+        <main class="shell">
+            <div class="intro">
+                <div>
+                    <!-- <p class="eyebrow">Device explorer / 01</p> -->
+                    <h1>BJT characteristics</h1>
+                    <p class="intro-copy">Vierquadrantenkennlinienfeld and load line.</p>
+                </div>
+                <span class="device-tag">NPN / Ebers-Moll</span>
+            </div>
+            <div class="workspace">
+                <aside aria-label="Simulation settings">
+                    <section class="panel" aria-labelledby="controls-title">
+                        <div class="panel-heading">
+                            <h2 id="controls-title">Circuit parameters</h2>
+                            <button class="reset" type="button" @click="resetParameters" title="Reset all parameters to their starting values">
+                                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6a6 6 0 1 1 0 4M2 2v4h4" /></svg>
+                                Reset
+                            </button>
+                        </div>
+                        <div class="controls">
+                            <div class="control">
+                                <div class="control-top">
+                                    <label for="vcc">Supply <span class="symbol">V<sub>CC</sub></span></label>
+                                    <output for="vcc">{{ Vcc.toFixed(1) }} V</output>
+                                </div>
+                                <input id="vcc" type="range" min="2" max="10" step="0.1" v-model.number="Vcc" :style="rangeFill(Vcc, 2, 10)" :aria-valuetext="Vcc.toFixed(1) + ' volts'">
+                                <div class="range-labels" aria-hidden="true"><span>2 V</span><span>10 V</span></div>
+                            </div>
+                            <div class="control">
+                                <div class="control-top">
+                                    <label for="vbe">Base-emitter <span class="symbol">V<sub>BE</sub></span></label>
+                                    <output for="vbe">{{ Vbe.toFixed(3) }} V</output>
+                                </div>
+                                <input id="vbe" type="range" min="0" max="0.75" step="0.00025" v-model.number="Vbe" :style="rangeFill(Vbe, 0, 0.75)" :aria-valuetext="Vbe.toFixed(5) + ' volts'">
+                                <div class="range-labels" aria-hidden="true"><span>0 V</span><span>0.75 V</span></div>
+                            </div>
+                            <div class="control">
+                                <div class="control-top">
+                                    <label for="vce">Collector-emitter <span class="symbol">V<sub>CE</sub></span></label>
+                                    <output for="vce">{{ Vce.toFixed(2) }} V</output>
+                                </div>
+                                <input id="vce" type="range" min="0" max="3" step="0.1" v-model.number="Vce" :disabled="autoVce" :style="rangeFill(Vce, 0, 3)" :aria-valuetext="Vce.toFixed(2) + ' volts'" aria-describedby="auto-description">
+                                <div class="range-labels" aria-hidden="true"><span>0 V</span><span>3 V</span></div>
+                            </div>
+                            <div class="control">
+                                <div class="control-top">
+                                    <label for="rc">Collector resistor <span class="symbol">R<sub>C</sub></span></label>
+                                    <output for="rc">{{ Rc }} Ω</output>
+                                </div>
+                                <input id="rc" type="range" min="10" max="1000" step="10" v-model.number="Rc" :style="rangeFill(Rc, 10, 1000)" :aria-valuetext="Rc + ' ohms'">
+                                <div class="range-labels" aria-hidden="true"><span>10 Ω</span><span>1 kΩ</span></div>
+                            </div>
+                        </div>
+                        <div class="auto-control">
+                            <label class="switch-label" for="auto-vce">
+                                Auto operating point
+                                <input id="auto-vce" type="checkbox" role="switch" v-model="autoVce" aria-describedby="auto-description">
+                            </label>
+                            <p id="auto-description">Set V<sub>CE</sub> from the load-line intersection within the plotted range.</p>
+                        </div>
+                    </section>
+                    <details class="model-note">
+                        <summary>About this model</summary>
+                        <p>An Ebers-Moll model with Early effect. Adjust the bias to see how all four characteristic plots relate to the same operating point.</p>
+                        <div class="model-params"><span>β<sub>F</sub> = 100</span><span>V<sub>A</sub> = 20 V</span><span>n = 1.2</span></div>
+                        <p>If no load-line intersection lies between 0 and 4 V, automatic mode retains the previous V<sub>CE</sub>.</p>
+                    </details>
+                </aside>
+                <section class="results" aria-label="Simulation results">
+                    <div class="readouts">
+                        <div class="panel readout">
+                            <div class="readout-label">Collector current <span class="readout-symbol">I<sub>C</sub></span></div>
+                            <div class="readout-value">{{ (collectorCurrent * 1000).toFixed(2) }}<span>mA</span></div>
+                        </div>
+                        <div class="panel readout">
+                            <div class="readout-label">Base current <span class="readout-symbol">I<sub>B</sub></span></div>
+                            <div class="readout-value">{{ baseCurrentReading.value }}<span>{{ baseCurrentReading.unit }}</span></div>
+                        </div>
+                        <div class="panel readout">
+                            <div class="readout-label">Operating voltage <span class="readout-symbol">V<sub>CE</sub></span></div>
+                            <div class="readout-value">{{ Vce.toFixed(2) }}<span>V</span></div>
+                        </div>
+                    </div>
+                    <section class="panel plot-panel" aria-labelledby="plot-title">
+                        <div class="panel-heading plot-heading">
+                            <div>
+                                <h2 id="plot-title">Four-quadrant characteristics</h2>
+                                <p class="plot-subtitle">Output, transfer, and input relationships</p>
+                            </div>
+                            <span class="mode-badge"><span class="status-dot" aria-hidden="true"></span>{{ autoVce ? 'Auto bias' : 'Manual bias' }}</span>
+                        </div>
+                        <div class="plot-scroll" role="region" aria-label="Four interactive Plotly characteristic plots. Scroll horizontally on small screens." tabindex="0">
+                            <div id="plot"></div>
+                        </div>
+                        <div class="plot-caption">
+                            <span class="guide-key">Dashed guides mark the selected operating point</span>
+                            <span>Hover to inspect · Drag to zoom · Double-click to reset</span>
+                        </div>
+                    </section>
+                    <div class="hint">
+                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="7.5" /><path d="M10 9v5m0-8v1" /></svg>
+                        <p>Start with V<sub>BE</sub> to explore collector current. Enable <strong>Auto operating point</strong> to follow the load line as you change the supply or resistance. Axis ranges stay fixed for comparison.</p>
+                    </div>
+                </section>
+            </div>
+            <footer class="footer"><span><!-- A --></span><span><!-- B --></span></footer>
+        </main>
     </div>
-    <div id="plot" style="width:100%;height:500px;"></div>
-</div>
+    <noscript>Enable JavaScript to use the interactive transistor lab.</noscript>
 
 <script>
-const { createApp, watch } = Vue;
+const { createApp } = Vue;
 const vth = 0.025;
 const Va = 20;
 const n = 1.2;
@@ -71,15 +311,38 @@ createApp({
         };
     },
     mounted() {
-        this.updatePlot();
+        // Wait until Vue removes v-cloak so Plotly measures the visible panel.
+        this.$nextTick(this.updatePlot);
+    },
+    computed: {
+        collectorCurrent() {
+            return calcIc(this.Vbe, this.Vbe - this.Vce);
+        },
+        baseCurrent() {
+            return calcIb(this.Vbe, this.Vbe - this.Vce);
+        },
+        baseCurrentReading() {
+            const useMilliamps = Math.abs(this.baseCurrent) >= 1e-3;
+            return {
+                value: (this.baseCurrent * (useMilliamps ? 1000 : 1e6)).toFixed(2),
+                unit: useMilliamps ? 'mA' : 'µA'
+            };
+        }
     },
     watch: {
         Vbe: 'updatePlot',
         Vce: 'updatePlot',
         Vcc: 'updatePlot',
-        Rc:  'updatePlot'
+        Rc:  'updatePlot',
+        autoVce: 'updatePlot'
     },
     methods: {
+        rangeFill(value, min, max) {
+            return { '--fill': `${Math.min(100, Math.max(0, (value - min) / (max - min) * 100))}%` };
+        },
+        resetParameters() {
+            Object.assign(this, { Vbe: 0.71, Vce: 0.5, Vcc: 4, Rc: 30, autoVce: false });
+        },
         findLoadLineIntersection() {
             const Vbe = this.Vbe;
             const Vcc = this.Vcc;
@@ -122,10 +385,10 @@ createApp({
                     name: '-Ib vs Ic'
                 },
                 {
-                    x: [-Ib, -Ib], y: [0, 3], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [-Ib, -Ib], y: [0, 3], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {
-                    x: [-30e-3, 0], y: [Ic, Ic], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [-30e-3, 0], y: [Ic, Ic], xaxis: 'x1', yaxis: 'y1', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {   // 222
                     x: this.linVbc.map(v => -v + this.Vbe),
@@ -136,10 +399,10 @@ createApp({
                     name: 'Ic(Vce)'
                 },
                 {
-                    x: [this.Vce, this.Vce], y: [0, 0.2], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [this.Vce, this.Vce], y: [0, 0.2], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {
-                    x: [0, 4], y: [Ic, Ic], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [0, 4], y: [Ic, Ic], xaxis: 'x2', yaxis: 'y2', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {
                     x: [0, this.Vcc], y: [this.Vcc / this.Rc, 0], xaxis: 'x2', yaxis: 'y2', mode: 'lines', name: 'Load line'
@@ -153,10 +416,10 @@ createApp({
                     name: '-Ib vs -Vbe'
                 },
                                 {
-                    x: [-Ib, -Ib], y: [0, -1], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [-Ib, -Ib], y: [0, -1], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {
-                    x: [-30e-3, 0], y: [-this.Vbe, -this.Vbe], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [-30e-3, 0], y: [-this.Vbe, -this.Vbe], xaxis: 'x3', yaxis: 'y3', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {   // 224
                     z: this.gridVbe.map(Vbe =>
@@ -171,17 +434,19 @@ createApp({
                             coloring: 'lines',
                             start: Ib,
                             end: Ib,
-                            size: 1e-12
+                            // Keep Plotly's endpoint tolerance above floating-point precision.
+                            // start === end still draws only the selected Ib contour.
+                            size: Math.max(1e-12, Math.abs(Ib) * 1e-8)
                         },
                     xaxis: 'x4',
                     yaxis: 'y4',
                     showscale: false
                 },
                 {
-                    x: [this.Vce, this.Vce], y: [0, -1], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [this.Vce, this.Vce], y: [0, -1], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
                 {
-                    x: [0, 4], y: [-this.Vbe, -this.Vbe], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dash' }, showlegend: false
+                    x: [0, 4], y: [-this.Vbe, -this.Vbe], xaxis: 'x4', yaxis: 'y4', mode: 'lines', line: { color: 'gray', dash: 'dot' }, showlegend: false
                 },
             ];
             const layout = {
@@ -196,7 +461,7 @@ createApp({
                 yaxis4: { title: '-Vbe', range: [-1, 0] },
                 margin: { t: 30 }
             };
-            Plotly.react('plot', traces, layout);
+            Plotly.react('plot', traces, layout, { responsive: true, displaylogo: false });
         }
     }
 }).mount('#app');
